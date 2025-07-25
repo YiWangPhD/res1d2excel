@@ -1,0 +1,19 @@
+v1.0.1 - 2025-03-11
+Initial release
+
+v1.0.2 - 2025-03-12
+Updated pandas methods according to pandas v3.0
+
+v1.0.3 - 2025-07-24
+Fixed bug on assigning chainage to data column names for AD quantities
+
+v1.0.4 - 2025-07-25
+Added functions to extract from catchments
+Changed test data to MIKE+ example model
+
+v1.1.0 - 2025-07-25
+Added "Alias" property to elements. results are named using Alias instead of 
+"Type-Quantity-MUID-Chainage" is Alias is provided
+Added "resample_t" option in output file sheet to allow user specified 
+resample time interval when exporting to spreadsheet. 
+If "resample_t" is missing or empty, no resample is performed.

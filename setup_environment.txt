@@ -1,0 +1,6 @@
+conda create --name py311_test python=3.11
+conda activate py311_test
+conda install pythonnet
+conda install openpyxl
+conda install pandas
+pip install mikeio1d

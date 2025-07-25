@@ -1,0 +1,144 @@
+Instructions:
+
+0. Environment required:
+	python 3.11 or up
+	packages: pandas, numpy, mikeio1d, pythonnet
+
+1. Run command to generate a template spreadsheet:
+	
+	python res1d2excel.py
+	
+2. Use file "res1d2excel_template.xlsx" to specify inputs and outputs. Run this command after:
+	
+	python res1d2excel.py full_path_to_your_spreadsheet
+	
+	for example:
+	python res1d2excel.py "J:\TOOLS\res1d2excel\v1.0.1\res1d2excel_template.xlsx"
+	
+3. In res1d2excel_template.xlsx file:
+
+3.1 List element MUIDs under corresponding sheets: node, link, orifice, pump, regulation, weir, and valve (catchment will be added in future version)
+
+3.2 In each row, put "quantity" in first cell, MUID in 2nd cell, and chainage in 3rd for links and regulations. 
+	Chainages are default to zero. Inaccurate chainages will be moved to the closest one.
+	If multiple quantities are required for same element, list them in separate rows. for example:
+		quantity	muid	chainage
+		WaterLevel	10149	0
+		Discharge	10149	15
+
+
+3.3 List res1d files in sheet "res1d_files". Make sure the 1st cell is "network". ("runoff", "ad", "Stats" will be supported in future versions)
+	short names are used as column names or sheet names in output files. 
+	DO NOT duplicate short names
+
+3.4 In "output_files" sheet, you must provide a folder to save output files. Possible output files are:
+	by_elements		by_element.xlsx		time series organized by element types and MUIDs
+	by_file			by_file.xlsx		time series organized by res1d short names
+	stats			stats.xlsx			statistics such as max, min, total, etc.
+	
+	DO NOT specify stats option if your res1d files are already statistics results. 
+	
+	You can also specify a resampling time interval using the keyword "resample_t". 
+	Example resample intervals are 1day, 2h, 5min, 30s
+	Using unacceptable intervals will cause unexpected errors. No checking here.
+	see https://pandas.pydata.org/docs/reference/api/pandas.Timedelta.html
+	
+4. Possible quantities for catchment simulations:
+		NetRainfall, TotalRunOff, 
+		SurfaceStorage, OverlandFlow, OverlandFlowFirstReservoir, OverlandFirstReservoirStorage, OverlandSecondReservoirStorage, 
+		RootZoneStorage, InterFlow, InterFlowAndBaseFlow, InterFlowFirstReservoir, CapillaryFlux, InfiltrationToGroundWater, 
+		GroundWaterDepth, BaseFlow, LowerBaseFlow
+
+5. Possible quantities for network simulations:
+
+	Nodes: 	WaterVolume, WaterLevel, TotalOutflow, TotalInflow
+	
+	Links: 	WaterLevel, WaterVolume, TotalInflow, TotalOutflow, 
+			Discharge, DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
+			ControlStrategyId, FlowVelocity, 
+			DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive
+	
+	Orifices: WaterLevel, TotalInflow, TotalOutflow, 
+			Discharge, DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
+			ControlStrategyId, GateLevel, 
+			DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
+			FlowAreaInStructure, FlowVelocityInStructure
+	
+	Pumps: 	WaterLevel, TotalInflow, TotalOutflow, 
+			Discharge, DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
+			ControlStrategyId, PumpIsActive, 
+			DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive
+ 
+	Regulations: WaterLevel, WaterVolume, TotalInflow, TotalOutflow, 
+			Discharge, DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
+			ControlStrategyId, FlowVelocity, 
+			DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
+ 
+	Weirs: 	WaterLevel, TotalInflow, TotalOutflow, 
+			Discharge, DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
+			CrestLevel, ControlStrategyId, 
+			DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
+			FlowAreaInStructure, FlowVelocityInStructure
+ 
+6. possible quantities for advection-dispersion simulations: (following examples are based on a pollutant named "sewage". replace with your pollutant)
+	
+	Nodes: sewageMass, sewage
+	
+	Links: sewageTransportMassPositive, sewageMass, sewageTransportMassNegative, sewageTransport, sewage, sewageTransportMass
+ 
+	Orifices: sewageTransportMassPositive, sewageTransportMassNegative, sewageTransport, sewage, sewageTransportMass
+ 
+	Pumps: sewageTransportMassPositive, sewageTransportMassNegative, sewageTransport, sewage, sewageTransportMass
+ 
+	Weirs: sewageTransportMassPositive, sewageTransportMassNegative, sewageTransport, sewage, sewageTransportMass
+ 
+7. Possible quantities for statistics result files:
+	
+	Nodes: 	WaterLevelAverage, WaterLevelMax, WaterLevelMaxTime, WaterLevelMin, WaterLevelMinTime, 
+			WaterVolumeAverage, WaterVolumeMax, WaterVolumeMaxTime, WaterVolumeMin, WaterVolumeMinTime, 
+			TotalInflow, TotalOutflow
+ 
+	Links: 	WaterLevelAverage, WaterLevelMax, WaterLevelMaxTime, WaterLevelMin, WaterLevelMinTime, 
+			WaterVolumeAverage, WaterVolumeMax, WaterVolumeMaxTime, WaterVolumeMin, WaterVolumeMinTime, 
+			TotalInflow, TotalOutflow, 
+			DischargeAverage, DischargeMax, DischargeMaxTime, DischargeMin, DischargeMinTime, 
+			DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
+			ControlStrategyIdAverage, ControlStrategyIdMax, ControlStrategyIdMaxTime, ControlStrategyIdMin, ControlStrategyIdMinTime, 
+			DischargeInStructureAverage, DischargeInStructureMax, DischargeInStructureMaxTime, DischargeInStructureMin, DischargeInStructureMinTime, 
+			DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
+			FlowVelocityAverage, FlowVelocityMax, FlowVelocityMaxTime, FlowVelocityMin, FlowVelocityMinTime
+ 
+	Orifices: WaterLevelAverage, WaterLevelMax, WaterLevelMaxTime, WaterLevelMin, WaterLevelMinTime, 
+			TotalInflow, TotalOutflow, 
+			DischargeAverage, DischargeMax, DischargeMaxTime, DischargeMin, DischargeMinTime, 
+			DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
+			GateLevelAverage, GateLevelMax, GateLevelMaxTime, GateLevelMin, GateLevelMinTime, 
+			ControlStrategyIdAverage, ControlStrategyIdMax, ControlStrategyIdMaxTime, ControlStrategyIdMin, ControlStrategyIdMinTime, 
+			DischargeInStructureAverage, DischargeInStructureMax, DischargeInStructureMaxTime, DischargeInStructureMin, DischargeInStructureMinTime, 
+			DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
+			FlowAreaInStructureAverage, FlowAreaInStructureMax, FlowAreaInStructureMaxTime, FlowAreaInStructureMin, FlowAreaInStructureMinTime, 
+			FlowVelocityInStructureAverage, FlowVelocityInStructureMax, FlowVelocityInStructureMaxTime, FlowVelocityInStructureMin, FlowVelocityInStructureMinTime
+
+	Pumps: 	WaterLevelAverage, WaterLevelMax, WaterLevelMaxTime, WaterLevelMin, WaterLevelMinTime, 
+			TotalInflow, TotalOutflow, 
+			DischargeAverage, DischargeMax, DischargeMaxTime, DischargeMin, DischargeMinTime, 
+			DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
+			ControlStrategyIdAverage, ControlStrategyIdMax, ControlStrategyIdMaxTime, ControlStrategyIdMin, ControlStrategyIdMinTime, 
+			DischargeInStructureAverage, DischargeInStructureMax, DischargeInStructureMaxTime, DischargeInStructureMin, DischargeInStructureMinTime, 
+			DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive
+
+	Weir: 	WaterLevelAverage, WaterLevelMax, WaterLevelMaxTime, WaterLevelMin, WaterLevelMinTime, 
+			TotalInflow, TotalOutflow, 
+			DischargeAverage, DischargeMax, DischargeMaxTime, DischargeMin, DischargeMinTime, 
+			DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
+			CrestLevelAverage, CrestLevelMax, CrestLevelMaxTime, CrestLevelMin, CrestLevelMinTime, 
+			ControlStrategyIdAverage, ControlStrategyIdMax, ControlStrategyIdMaxTime, ControlStrategyIdMin, ControlStrategyIdMinTime, 
+			DischargeInStructureAverage, DischargeInStructureMax, DischargeInStructureMaxTime, DischargeInStructureMin, DischargeInStructureMinTime, 
+			DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
+			FlowAreaInStructureAverage, FlowAreaInStructureMax, FlowAreaInStructureMaxTime, FlowAreaInStructureMin, FlowAreaInStructureMinTime, 
+			FlowVelocityInStructureAverage, FlowVelocityInStructureMax, FlowVelocityInStructureMaxTime, FlowVelocityInStructureMin, FlowVelocityInStructureMinTime
+
+	Tracer: sewageAverage, sewageMax, sewageMaxTime, sewageMin, sewageMinTime,
+			sewageTransportAverage, sewageTransportMax, sewageTransportMaxTime, sewageTransportMin, sewageTransportMinTime,
+			sewageMassAverage, sewageMassMax, sewageMassMaxTime, sewageMassMin, sewageMassMinTime,
+			sewageTransportMass, sewageTransportMassNegative, sewageTransportMassPositive
