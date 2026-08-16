@@ -1,127 +1,77 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# Author: Yi Wang
+# Author: copilot 
+# Supervisor: Yi Wang
+
 # this class configurates one element and quantity to be extracted from res1d
 # this class also contains time series and statistics, tagged by res1d file names
 
-
 import pandas as pd
-
-class SimpleElement():
-    
-    
-    def __init__(self, element_id, element_alias, element_type, quantity_id, chainage = 0.0):
-        self._element_id = element_id
-        self._element_alias = element_alias
-        self._element_type = element_type.lower()
-        self._quantity_id = quantity_id
-        self._chainage = chainage
-        self._timeseries = {}
-        self._statistics = {}
-    
-    
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return (self._element_id == other._element_id) and \
-                (self._element_alias == other._element_alias) and \
-                (self._element_type == other._element_type) and \
-                (self._quantity_id == other._quantity_id) and \
-                (self._chainage == other._chainage)
-        else:
-            return False
-    
-    
-    def __lt__(self, other):
-        return ((self._element_type, self._quantity_id, self._element_alias, self._element_id, self._chainage) <
-                (other._element_type, other._quantity_id, other._element_alias, other._element_id, other._chainage))
+from typing import Optional
+from base_element import BaseElement
+import statistics_calculator
 
 
-    def __hash__(self):
-          return hash((self._element_type, self._quantity_id, self._element_id, self._element_alias, self._chainage))
-      
-      
-    def __str__(self):
-        str1 = f'Type: {self._element_type}, ID: {self._element_id}, '
-        if self._element_alias is not None:
-            str1 += f'Alias: {self._element_alias}, '
-        str1 += f'Quantity: {self._quantity_id}, Chainage {self._chainage}'
-        return str1
+class SimpleElement(BaseElement):
+    
+    def __init__(
+        self,
+        element_id: str,
+        element_alias: Optional[str],
+        element_type: str,
+        quantity_id: str,
+        chainage: float = 0.0,
+    ) -> None:
 
-        
-    def get_element_id(self):
-        return self._element_id
-    
-    def get_element_alias(self):
-        return self._element_alias
-    
-    
-    def get_element_string(self):
-        return f'{self._element_type}-{self._quantity_id}-{self._element_id}-{self._chainage}'
-    
-    def get_element_type(self):
-        return self._element_type
-    
-    
-    def get_quantity_id(self):
-        return self._quantity_id
-    
-    
-    def get_chainage(self):
-        return self._chainage
-    
-    
-    def add_ts(self, ts_name, ts):
+        super().__init__(
+            element_id=element_id,
+            element_alias=element_alias,
+            element_type=element_type,
+            quantity_id=quantity_id,
+            chainage=chainage,
+        )
+
+    # -------------------------
+    # Time series (SimpleElement owns raw data)
+    # -------------------------
+
+    def add_ts(self, ts_name: str, ts: pd.Series, overwrite: bool = True) -> None:
+        if not isinstance(ts, pd.Series):
+            raise TypeError("ts must be a pandas Series")
+
+        if ts_name in self._timeseries and not overwrite:
+            raise ValueError(f"Timeseries '{ts_name}' already exists")
+
         self._timeseries[ts_name] = ts.copy()
+
+    def update_ts(self, *args, **kwargs) -> None:
+        """
+        For SimpleElement, time series are externally provided.
+        This method is a no-op (or can be used for validation later).
+        """
+        pass
+
+    # -------------------------
+    # String
+    # -------------------------
+
+    def __str__(self) -> str:
+        base = f"Type: {self._element_type}, ID: {self._element_id}, "
+
+        if self._element_alias:
+            base += f"Alias: {self._element_alias}, "
+
+        base += f"Quantity: {self._quantity_id}, Chainage: {self._chainage}"
+        return base
         
-        
-    def get_ts(self, ts_name):
-        return self._timeseries.get(ts_name, None)
-    
-    
-    def get_ts_dataframe(self):
-        return pd.DataFrame(self._timeseries)
-    
-        
-    def get_ts_dict(self):
-        return self._timeseries
-    
-    
-    def get_ts_names(self):
-        return list(self._timeseries.keys())
-    
-    
-    def remove_ts(self, ts_name):
-        self._timeseries.pop(ts_name, None)
-        
-        
-    def reset_ts(self):
-        self._timeseries = {}
-    
-    
-    def add_stats(self, ts_name, stats):
-        self._statistics[ts_name] = stats
-        
-        
-    def get_stats(self, ts_name):
-        return self._statistics.get(ts_name, None)
-    
-    
-    def get_stats_dataframe(self):
-        return pd.DataFrame(self._statistics)
-    
-    
-    def get_stats_dict(self):
-        return self._statistics
-    
-    
-    def remove_stats(self, ts_name):
-        self._statistics.pop(ts_name, None)
-        
-        
-    def reset_stats(self):
-        self._statistics = {}
-        
+    # -------------------------
+    # Statistics (reuse base)
+    # -------------------------
+
+    def update_statistics(self, calculator=None) -> None:
+        super().update_statistics(calculator or statistics_calculator)
+
     
 def test_element():
     node1 = SimpleElement('10001', '1001_level', 'node', 'WaterLevel')

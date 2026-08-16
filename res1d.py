@@ -190,15 +190,19 @@ class Res1D:
                         chainages = [gp.get_Chainage() for gp in elem.get_GridPoints()]
                         if d.shape[1] * 2 == len(chainages) + 3:
                             # number of columns is all Q points plus 1st and last H points, e.g. AD
-                            d.columns = [f"{name} {chainage}" for chainage in [chainages[0], *chainages[1::2], chainages[-1]]]
+                            # d.columns = [f"{name} {chainage}" for chainage in [chainages[0], *chainages[1::2], chainages[-1]]]
+                            d.columns = pd.MultiIndex.from_tuples([(name, chainage) for chainage in [chainages[0], *chainages[1::2], chainages[-1]]])
                         elif d.shape[1] * 2 == len(chainages) + 1:
                             # number of columns more than half of chainages, e.g. H points only
-                            d.columns = [f"{name} {chainage}" for chainage in chainages[0::2]]
+                            # d.columns = [f"{name} {chainage}" for chainage in chainages[0::2]]
+                            d.columns = pd.MultiIndex.from_tuples([(name, chainage) for chainage in chainages[0::2]])
                         elif d.shape[1] * 2 == len(chainages) - 1:
                             # number of columns less than half of chainages, e.g. Q points only
-                            d.columns = [f"{name} {chainage}" for chainage in chainages[1::2]]
+                            # d.columns = [f"{name} {chainage}" for chainage in chainages[1::2]]
+                            d.columns = pd.MultiIndex.from_tuples([(name, chainage) for chainage in chainages[1::2]])
                         else:
                             raise Exception(f"At Reach {name}, we cannot match chainages with data items. There are {d.shape[1]} columns and {len(chainages)} chainages")
+                        d.columns = d.columns.set_names(['muid', 'chainage'])
                     else:
                         d.columns = [name]
                     df_elem[quantity_ID].append(d)

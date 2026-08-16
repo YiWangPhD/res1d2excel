@@ -5,7 +5,7 @@
 
 import os
 import pandas as pd
-import simple_element_collection
+import element_collection
 import simple_element
 
 
@@ -112,7 +112,7 @@ def create_res1d_files_dataframe_template():
 def create_element_collections_from_dataframes(dfs):
     element_collections = []
     for element_type, element_df in dfs.items():
-        ts_manager = simple_element_collection.SimpleElementCollection(element_type)
+        ts_manager = element_collection.ElementCollection(element_type)
         element_df = element_df.fillna(0)
         for index, row in element_df.iterrows():
             alias = row.iloc[0]

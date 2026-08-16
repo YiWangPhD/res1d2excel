@@ -444,22 +444,22 @@ class Res1DNetwork(res1d.Res1D):
 
 
 def test_network():
-    res1d_file_path = r"C:\Users\YWANG\Documents\Python Scripts\res1d\test_data\VSA_2024_SCS1A_15_50mmDefault_Network_HD.res1d"
+    res1d_file_path = r".\test_data\Rainfall_CDS_1yearHDBaseDefault_Network_HD.res1d"
     res1d = Res1DNetwork(res1d_file_path)
     # test node counts
     print(f'Number of nodes: {res1d.node_count}')
     # test node data frame
-    print('Node water levels: 7430A, 10034')
-    df = res1d.get_node_data_frames(['7430A', '10034'], ['WaterLevel'])['WaterLevel']
+    print('Node water levels: C14150801, C15155101')
+    df = res1d.get_node_data_frames(['C14150801A', 'C15155101'], ['WaterLevel'])['WaterLevel']
     print(df.head())
     # test reach data frame
-    print('link discharge: 480740, 40863_1')
-    df = res1d.get_reach_data_frames(['480740', '40664C'], ['Discharge', 'WaterLevel'])
+    print('link discharge: C16164102.2, Link_35')
+    df = res1d.get_reach_data_frames(['C16164102.2', 'Link_35'], ['Discharge', 'WaterLevel'])
     print(df['Discharge'].head())
     print(df['WaterLevel'].head())
     # test structure data frame
-    print('structure discharges: Weir_HAC_MH3B, Orifice_NAI_MH57', 'WILLINGDON 1', 'Yukon Radial Gate (T-C)')
-    df = res1d.get_structure_data_frames(['Weir_HAC_MH3B', 'Orifice_NAI_MH57', 'WILLINGDON 1', 'Yukon Radial Gate (T-C)'])
+    print('structure discharges: Weir_to_river, Orifice_7', 'Pump_2_to_WWTP')
+    df = res1d.get_structure_data_frames(['Weir_to_river', 'Orifice_7', 'Pump_2_to_WWTP'])
     print(df['DischargeInStructure'].head())
     print(df['WaterLevel'].iloc[0,:])
     utilities_plotly.draw_graph([df['DischargeInStructure']])

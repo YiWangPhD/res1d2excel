@@ -5,7 +5,7 @@
 # this module extracts time seris from one Res1D class and add to
 # SimpleElementCollection instances
 
-import simple_element_collection
+import element_collection
 import res1d_network
 import res1d_runoff
 
@@ -18,8 +18,8 @@ def batch_res1d_extractor(res1d_dict, elem_collection_list):
     ----------
     res1d_dict : dictionary {short_name: file_path}
         this dictionary holds collection of res1d file paths
-    elem_collection_list : list of simple element collections
-        list of simple element collections
+    elem_collection_list : list of element collections
+        list of element collections
 
     Returns
     -------
@@ -51,8 +51,8 @@ def res1d_extractor(short_name, res1d, elem_collection_list):
         short name for the res1d file, e.g. 50mm, double_pipe, ...
     res1d : Res1DNetwork or Res1DRunoff
         instance of res1d class.
-    elem_collection_list : list of simple element collections
-        list of simple element collections
+    elem_collection_list : list of element collections
+        list of element collections
 
     Returns
     -------
@@ -63,7 +63,7 @@ def res1d_extractor(short_name, res1d, elem_collection_list):
         print(f'Extracting {elem_collection.get_element_type()} data ...')
         dfs = extract_element_ts(res1d, elem_collection)
         if dfs is not None:
-            elem_collection.update_ts(dfs, short_name)
+            elem_collection.add_ts(dfs, short_name)
             elem_collection.update_statistics()
 
 
@@ -75,8 +75,8 @@ def extract_element_ts(res1d, elem_collection):
     ----------
     res1d : Res1DNetwork or Res1DRunoff
         instance of res1d class.
-    elem_collection : SimpleElementCollection
-        collection of SimpleElement.
+    elem_collection : ElementCollection
+        collection of Element.
 
     Returns
     -------
@@ -85,7 +85,7 @@ def extract_element_ts(res1d, elem_collection):
 
     """
     if not isinstance(elem_collection, 
-                      simple_element_collection.SimpleElementCollection):
+                      element_collection.ElementCollection):
         return None
     element_type = elem_collection.get_element_type()
     quantity_ids = elem_collection.get_quantity_ids()
@@ -118,37 +118,27 @@ def extract_element_ts(res1d, elem_collection):
     
 def test_network():
     import os
-    import collection_builder_res1d_xlsx
-    import collection_builder_element_xlsx
+    import input_xlsx
+    import input_dataframes
+
+    res1d_file_dfs = input_dataframes.create_res1d_files_dataframe_template()
+    element_collections_dfs = input_dataframes.create_element_collections_dataframes_template()
     
-    xlsx_file_path = os.path.join(os.getcwd(), "res1d_config_template.xlsx")
-    res1d_dict = collection_builder_res1d_xlsx.create_res1d_collections_from_xlsx(xlsx_file_path)
-    
-    xlsx_file_path = os.path.join(os.getcwd(), "elements_config_template.xlsx")
-    elem_collection_list = collection_builder_element_xlsx.create_element_collections_from_xlsx(xlsx_file_path)
+    res1d_dict = input_dataframes.create_res1d_collections_from_dataframes(res1d_file_dfs)
+    element_collections = input_dataframes.create_element_collections_from_dataframes(element_collections_dfs)
         
     # extract ts
-    batch_res1d_extractor(res1d_dict, elem_collection_list)
+    batch_res1d_extractor(res1d_dict, element_collections)
     
     # show results        
-    for elements in [elem_collection_list[0].get_elements_by_quantity(qId) for qId in ['WaterLevel']]:
+    for elements in [element_collections[0].get_elements_by_quantity(qId) for qId in ['TotalRunOff']]:
         utilities_plotly.draw_sub_graphs([[element.get_ts_dataframe()] for element in elements])
         
-    for elements in [elem_collection_list[1].get_elements_by_quantity(qId) for qId in ['WaterLevel', 'Discharge', 'FlowVelocity']]:
+    for elements in [element_collections[1].get_elements_by_quantity(qId) for qId in ['WaterLevel']]:
         utilities_plotly.draw_sub_graphs([[element.get_ts_dataframe()] for element in elements])
     
-    for elements in [elem_collection_list[2].get_elements_by_quantity(qId) for qId in ['Discharge', 'GateLevel', 'ControlStrategyId']]:
+    for elements in [element_collections[2].get_elements_by_quantity(qId) for qId in ['Discharge', 'WaterLevel']]:
         utilities_plotly.draw_sub_graphs([[element.get_ts_dataframe()] for element in elements])
-        
-    for elements in [elem_collection_list[3].get_elements_by_quantity(qId) for qId in ['Discharge', 'ControlStrategyId']]:
-        utilities_plotly.draw_sub_graphs([[element.get_ts_dataframe()] for element in elements])
-        
-    for elements in [elem_collection_list[4].get_elements_by_quantity(qId) for qId in ['Discharge', 'WaterLevel', 'FlowVelocity']]:
-        utilities_plotly.draw_sub_graphs([[element.get_ts_dataframe()] for element in elements])
-        
-    for elements in [elem_collection_list[5].get_elements_by_quantity(qId) for qId in ['Discharge', 'CrestLevel', 'ControlStrategyId']]:
-        utilities_plotly.draw_sub_graphs([[element.get_ts_dataframe()] for element in elements])
-
 
 def main():
     print("in res1d_extractor.py!")

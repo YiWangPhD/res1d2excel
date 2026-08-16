@@ -13,7 +13,24 @@ Changed test data to MIKE+ example model
 
 v1.1.0 - 2025-07-25
 Added "Alias" property to elements. results are named using Alias instead of 
-"Type-Quantity-MUID-Chainage" is Alias is provided
+"Type-Quantity-MUID-Chainage" if Alias is provided
 Added "resample_t" option in output file sheet to allow user specified 
 resample time interval when exporting to spreadsheet. 
 If "resample_t" is missing or empty, no resample is performed.
+
+v1.2.0 - 2026-05-15
+refactored element classes. added abstract class "base_element" as parent of simple and combined element classes
+created HTML pages for parameter inputs. outputs are saved to JSON format. 
+
+
+to do list:
+    combined elements
+    use json input file
+    webpage to create json input file
+    
+    hours to skip at the begining and truncate at the end
+    extract multiple time periods from the same res1d file
+    export to html and pdf
+    also show monitored data on html or pdf
+    export to pickle or other binery format
+    

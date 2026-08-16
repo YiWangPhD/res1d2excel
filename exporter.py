@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Author: Yi Wang
-# it takes Simple element Collections and extracts dataframes
+# it takes element Collections and extracts dataframes
 # it also takes combined elements and extracts dataframes
 # it extracts by element (one dataframe per element, it has data from all res1d files)
 # it extracts by res1d file (one dataframe per res1d file, it has data from all elements)
@@ -11,14 +11,14 @@ import pandas as pd
 
 def dataframe_by_element(elem_collection_list):
     """
-    iterate through list of simple element collections and 
+    iterate through list of element collections and 
     extract data frames of time series to a dictionary with:
         key: Type-Quantity-ID-Chainage or Alias if it is not None
         value: dataframe
     
     Parameters
     ----------
-    elem_collection_list : list of simple element collections
+    elem_collection_list : list of element collections
         list of simple element collections
 
     Returns
@@ -44,8 +44,8 @@ def dataframe_by_file(elem_collection_list):
 
     Parameters
     ----------
-    elem_collection_list : list of simple element collections
-        list of simple element collections
+    elem_collection_list : list of element collections
+        list of element collections
 
     Returns
     -------
@@ -72,15 +72,15 @@ def dataframe_by_file(elem_collection_list):
 
 def dataframes_stats(elem_collection_list):
     """
-    iterate through list of simple element collections and 
+    iterate through list of element collections and 
     extract data frames of statostocs to a dictionary with:
         key: statistic name
         value: dataframe of statistics
 
     Parameters
     ----------
-    elem_collection_list : list of simple element collections
-        list of simple element collections
+    elem_collection_list : list of element collections
+        list of element collections
 
     Returns
     -------

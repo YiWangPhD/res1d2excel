@@ -1,0 +1,109 @@
+{
+  "catchment": [
+    {"alias": "S21201401_TotalRunOff", "quantity": "TotalRunOff", "muid": "S21201401"},
+    {"alias": "S15155401_TotalRunOff", "quantity": "TotalRunOff", "muid": "S15155401"},
+    {"alias": "S17171302_TotalRunOff", "quantity": "TotalRunOff", "muid": "S17171302"},
+    {"alias": null, "quantity": "NetRainfall", "muid": "S21201401"},
+    {"alias": null, "quantity": "NetRainfall", "muid": "S15155401"},
+    {"alias": "S17171302_NetRainfall", "quantity": "NetRainfall", "muid": "S17171302"}
+  ],
+  "node": [
+    {"alias": "C14150801_WaterLevel", "quantity": "WaterLevel", "muid": "C14150801"},
+    {"alias": "C16169801_WaterLevel", "quantity": "WaterLevel", "muid": "C16169801"},
+    {"alias": null, "quantity": "WaterLevel", "muid": "Inflow to_WWTP_Basin"}
+  ],
+  "link": [
+    {"alias": "C15152001.2_WaterLevel", "quantity": "WaterLevel", "muid": "C15152001.2", "chainage": null},
+    {"alias": "C19203901.2_WaterLevel", "quantity": "WaterLevel", "muid": "C19203901.2", "chainage": 66.3},
+    {"alias": null, "quantity": "WaterLevel", "muid": "C20203301.2", "chainage": 62.965},
+    {"alias": "C15152001.2_Discharge", "quantity": "Discharge", "muid": "C15152001.2", "chainage": null},
+    {"alias": null, "quantity": "Discharge", "muid": "C19203901.2", "chainage": null},
+    {"alias": "C20203301.2_Discharge", "quantity": "Discharge", "muid": "C20203301.2", "chainage": 29.75},
+    {"alias": "C15152001.2_Velocity", "quantity": "FlowVelocity", "muid": "C15152001.2", "chainage": null},
+    {"alias": "C19203901.2_Velocity", "quantity": "FlowVelocity", "muid": "C19203901.2", "chainage": null},
+    {"alias": null, "quantity": "FlowVelocity", "muid": "C20203301.2", "chainage": null}
+  ],
+  "orifice": [
+    {"alias": "Sir40.1_O_Discharge", "quantity": "Discharge", "muid": "Sir40.1_O"},
+    {"alias": "Orifice_6_Discharge", "quantity": "Discharge", "muid": "Orifice_6"},
+    {"alias": null, "quantity": "Discharge", "muid": "Sir5.1_O"},
+    {"alias": "Sir40.1_O_WaterLevel", "quantity": "WaterLevel", "muid": "Sir40.1_O"},
+    {"alias": "Orifice_6_WaterLevel", "quantity": "WaterLevel", "muid": "Orifice_6"},
+    {"alias": null, "quantity": "WaterLevel", "muid": "Sir5.1_O"},
+    {"alias": "Sir40.1_O_GateLevel", "quantity": "GateLevel", "muid": "Sir40.1_O"},
+    {"alias": "Orifice_6_GateLevel", "quantity": "GateLevel", "muid": "Orifice_6"},
+    {"alias": "Sir5.1_O_GateLevel", "quantity": "GateLevel", "muid": "Sir5.1_O"},
+    {"alias": null, "quantity": "ControlStrategyId", "muid": "Sir40.1_O"},
+    {"alias": null, "quantity": "ControlStrategyId", "muid": "Orifice_6"},
+    {"alias": "Sir5.1_O_ControlStrategyId", "quantity": "ControlStrategyId", "muid": "Sir5.1_O"}
+  ],
+  "pump": [
+    {"alias": "Pump_1_to_WWTP_Discharge", "quantity": "Discharge", "muid": "Pump_1_to_WWTP"},
+    {"alias": "Pump_3_to_WWTP_Discharge", "quantity": "Discharge", "muid": "Pump_3_to_WWTP"},
+    {"alias": null, "quantity": "Discharge", "muid": "SirPump20.1"},
+    {"alias": "Pump_1_to_WWTP_ControlStrategyId", "quantity": "ControlStrategyId", "muid": "Pump_1_to_WWTP"},
+    {"alias": "Pump_3_to_WWTP_ControlStrategyId", "quantity": "ControlStrategyId", "muid": "Pump_3_to_WWTP"},
+    {"alias": null, "quantity": "ControlStrategyId", "muid": "SirPump20.1"}
+  ],
+  "regulation": [
+    {"alias": "C14150801.2_Discharge", "quantity": "Discharge", "muid": "C14150801.2", "chainage": null},
+    {"alias": "C14150801.2_WaterLevel", "quantity": "WaterLevel", "muid": "C14150801.2", "chainage": null},
+    {"alias": null, "quantity": "FlowVelocity", "muid": "C14150801.2", "chainage": null}
+  ],
+  "weir": [
+    {"alias": "Weir_to WWTP_Discharge", "quantity": "Discharge", "muid": "Weir_to WWTP"},
+    {"alias": "Weir_to_river_Discharge", "quantity": "Discharge", "muid": "Weir_to_river"},
+    {"alias": "Weir_to WWTP_CrestLevel", "quantity": "CrestLevel", "muid": "Weir_to WWTP"},
+    {"alias": null, "quantity": "CrestLevel", "muid": "Weir_to_river"},
+    {"alias": null, "quantity": "ControlStrategyId", "muid": "Weir_to WWTP"},
+    {"alias": null, "quantity": "ControlStrategyId", "muid": "Weir_to_river"}
+  ],
+  "valve": [],
+  "combined": [
+    {
+      "alias": "Combined1",
+      "quantity": "Discharge",
+      "terms": [
+        {
+          "op": "+",
+          "source": "link",
+          "alias": "C15152001.2_Discharge"
+        },
+        {
+          "op": "-",
+          "source": "orifice",
+          "alias": "Orifice_6_Discharge"
+        },
+        {
+          "op": "+",
+          "source": "catchment",
+          "alias": "S15155401_TotalRunOff"
+        },
+        {
+          "op": "-",
+          "source": "pump",
+          "alias": "Pump_1_to_WWTP_Discharge"
+        }
+      ]
+    }
+  ],
+  "output_files": {
+    "output_folder": "C:/output",
+    "resample_interval": "10 minute",
+    "export_by_element": true,
+    "export_by_result_file": false,
+    "export_statistics": true
+  },
+  "res1d_files": [
+    {
+      "result_type": "network",
+      "short_name": "HD",
+      "file_path": "Rainfall_CDS_1yearHDBaseDefault_Network_HD.res1d"
+    },
+    {
+      "result_type": "runoff",
+      "short_name": "RR",
+      "file_path": "Rainfall_CDS_1_yearRRBaseDefault_Surface_runoff.res1d"
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import input_xlsx
 import res1d_extractors
 import exporter
 import exporter_xlsx
+import pickle
 
 
 # read input files to dataframes
@@ -34,7 +35,7 @@ def create_collections(dfs_list):
     return [res1d_dict, element_collections, xlsx_dict]
 
 
-def export_results(element_collections, xlsx_dict):
+def export_results(element_collections, xlsx_dict, export_pickles = True):
     resample_t = xlsx_dict['resample_t']
     
     for file_tag in ['by_elements', 'by_file', 'stats']:
@@ -53,6 +54,9 @@ def export_results(element_collections, xlsx_dict):
             else:
                 exporter_xlsx.export_excel(dfs, xlsx_file_path, resample_t)
             print(f'Data exported to file: {xlsx_file_path}')
+            if export_pickles:
+                pickle_file_path = xlsx_file_path.replace('.xlsx', '.pkl')
+                pickle.dump(dfs, open(pickle_file_path, 'wb'))
 
 def main():
     if len(sys.argv) == 1:

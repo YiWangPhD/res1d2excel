@@ -114,13 +114,13 @@ class Res1DRunoff(res1d.Res1D):
 
 # test
 def test_runoff():
-    res1d_file_path = r"J:\SEWER_AREA_MODELS\VSA\04_ANALYSIS_WORK\21. SYSTEM_ASSESSMENT\Incremental_rainfall_runs\Runoff Results\VSA_Runoff_EX-24h-VA73-50mm-SCS1A_BaseRR.res1d"
+    res1d_file_path = r".\test_data\Rainfall_CDS_1_yearRRBaseDefault_Surface_runoff.res1d"
     res1d = Res1DRunoff(res1d_file_path)
     print(f'Number of catchments: {res1d.catchment_count}')
     print(', '.join(res1d._catchment_quantity_IDs))
     utilities_plotly.draw_graph([
         res1d.get_catchment_data_frames(
-            ['1035', '1036'], ['TotalRunOff'], False)['TotalRunOff']
+            ['S15155401', 'S17171302'], ['TotalRunOff'], False)['TotalRunOff']
         ])
     
     
