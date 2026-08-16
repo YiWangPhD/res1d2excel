@@ -1,0 +1,309 @@
+@startuml
+
+' Layout kept close to the existing res1d_UML.png:
+' elements on the left, outputs/app in the middle, res1d on the right,
+' inputs below the app.
+scale max 3600 width
+left to right direction
+skinparam linetype polyline
+skinparam packageStyle folder
+skinparam classAttributeIconSize 10
+skinparam nodesep 35
+skinparam ranksep 45
+
+package elements {
+
+abstract class BaseElement #lightgreen {
+    -string: _element_id
+    -Optional<string>: _element_alias
+    -string: _element_type
+    -Optional<string>: _quantity_id
+    -double: _chainage
+    -Dict<string, Series>: _timeseries
+    -Dict<string, Series>: _statistics
+    --
+    +__init__(...)
+    +bool: __eq__(other)
+    +bool: __lt__(other)
+    +int: __hash__()
+    +string: __str__()
+    +string: __repr__()
+    +string: get_element_id()
+    +Optional<string>: get_element_alias()
+    +string: get_element_string()
+    +string: get_element_type()
+    +Optional<string>: get_quantity_id()
+    +double: get_chainage()
+    +Series: get_ts(ts_name)
+    +DataFrame: get_ts_dataframe()
+    +Dict<string, Series>: get_ts_dict()
+    +string[]: get_ts_names()
+    +void: remove_ts(ts_name)
+    +void: reset_ts()
+    +void: add_ts(...)
+    +void: update_ts(...)
+    +void: add_stats(...)
+    +Series: get_stats(ts_name)
+    +DataFrame: get_stats_dataframe()
+    +Dict<string, Series>: get_stats_dict()
+    +void: remove_stats(ts_name)
+    +void: reset_stats()
+    +void: update_statistics(calculator)
+}
+
+class SimpleElement #lightgreen {
+    +__init__(...)
+    +void: add_ts(...)
+    +void: update_ts()
+    +void: update_statistics(...)
+    +string: __str__()
+}
+
+class CombinedElement #lightgreen {
+    -Dict<BaseElement, BaseElement>: _positive_elements
+    -Dict<BaseElement, BaseElement>: _negative_elements
+    -Optional<double>: _fill_outside
+    -string: _interpolation_method
+    --
+    +__init__(...)
+    +void: add_element(element, sign=1)
+    +void: remove_element(element)
+    +void: reset_elements()
+    +BaseElement[]: get_elements()
+    +string: print_equation()
+    +void: update_ts()
+    +void: add_ts(...)
+    +void: update_statistics(...)
+    +string: __str__()
+    +string: __repr__()
+    -Index: _get_common_index(...)
+    -Optional<Timedelta>: _infer_min_frequency(...)
+    -DatetimeIndex: _build_target_index(...)
+    -Series: _align_series(...)
+    -Series[]: _prepare_series(...)
+    -Optional<Series>: _sum_series(...)
+    -Optional<Series>: _compute_result(...)
+}
+
+class ElementCollection #lightgreen {
+    -string: _element_type
+    -Dict<string, Dict<BaseElement, BaseElement>>: _quantities
+    --
+    +__init__(element_type)
+    +void: add_element(element)
+    +string: get_element_type()
+    +string[]: get_all_element_ids()
+    +string[]: get_element_ids_by_quantity(quantity_id)
+    +BaseElement[]: get_all_elements()
+    +BaseElement[]: get_elements_by_quantity(quantity_id)
+    +BaseElement[]: get_elements_by_quantity_and_id(...)
+    +string[]: get_quantity_ids()
+    +Iterator<BaseElement>: iter_elements()
+    +int: __len__()
+    +void: add_ts(dfs, filename)
+    +void: update_ts()
+    +void: update_statistics(...)
+    +string: __str__()
+    +string: __repr__()
+    -Union<string, tuple, None>: _find_column_in_dataframe(...)
+}
+
+abstract statistics_calculator #lightgreen {
+    +mean(s)
+    +max(s)
+    +min(s)
+    +sum(s)
+    +max_block(s)
+    +min_block(s)
+    +integral(s)
+    +integral_block(s)
+    +last_timestep(s)
+    +positive_duration(s)
+    +negative_duration(s)
+    +get_all_stats(s)
+}
+
+}
+
+package outputs {
+
+abstract exporter #lightgreen {
+    +Dict<string, DataFrame>: dataframe_by_element(...)
+    +Dict<string, DataFrame>: dataframe_by_file(...)
+    +Dict<string, DataFrame>: dataframes_stats(...)
+}
+
+abstract exporter_xlsx #lightgreen {
+    +void: export_excel(...)
+}
+
+}
+
+package app {
+
+abstract res1d2excel #lightgreen {
+    +[dfs]: read_input_files(args)
+    +[]: create_collections(dfs_list)
+    +void: export_results(...)
+}
+
+abstract main #lightgreen {
+    +void: main()
+}
+
+}
+
+package res1d {
+
+class Res1D #lightgreen {
+    +ResultData: result_data
+    +Timestamp: from_time_stamp
+    +Timestamp: to_time_stamp
+    +int[]: time_stamp_indices
+    +DatetimeIndex: df_time_stamps
+    --
+    +__init__(file_path)
+    -Timestamp: _res1d_time_to_pd_timestamp(t)
+    -[int[], DatetimeIndex]: _get_time(...)
+    -void: _validate_file_path(file_path)
+    #Dict<string, DataFrame>: _get_element_data_frame(...)
+    +void: setTimeRange(...)
+}
+
+class Res1DRunoff #lightgreen {
+    -{static} string[]: _runoffSubCatchSuffix
+    -string[]: _catchment_quantity_IDs
+    +Dict<string, int>: catchment_IDs
+    +int: catchment_count
+    --
+    +__init__(file_path)
+    -Dict<string, int>: _get_element_IDs()
+    +Dict<string, DataFrame>: get_catchment_data_frames(...)
+    +DataFrame: get_discharge_data_frame(...)
+}
+
+class Res1DNetwork #lightgreen {
+    -string[]: _node_quantity_IDs
+    -string[]: _reach_quantity_IDs
+    -string[]: _orifice_quantity_IDs
+    -string[]: _pump_quantity_IDs
+    -string[]: _regulation_quantity_IDs
+    -string[]: _weir_quantity_IDs
+    -string[]: _valve_quantity_IDs
+    +Dict<string, int>: node_IDs
+    +Dict<string, int>: reach_IDs
+    +Dict<string, int>: orifice_IDs
+    +Dict<string, int>: pump_IDs
+    +Dict<string, int>: regulation_IDs
+    +Dict<string, int>: weir_IDs
+    +Dict<string, int>: valve_IDs
+    +int: node_count
+    +int: reach_count
+    +int: orifice_count
+    +int: pump_count
+    +int: regulation_count
+    +int: weir_count
+    +int: valve_count
+    --
+    +__init__(file_path)
+    -string[]: _get_structure_quantities(...)
+    -Dict[]: _get_element_IDs()
+    +Dict<string, DataFrame>: get_node_data_frames(...)
+    +Dict<string, DataFrame>: get_reach_data_frames(...)
+    +Dict<string, DataFrame>: get_orifice_data_frames(...)
+    +Dict<string, DataFrame>: get_pump_data_frames(...)
+    +Dict<string, DataFrame>: get_regulation_data_frames(...)
+    +Dict<string, DataFrame>: get_weir_data_frames(...)
+    +Dict<string, DataFrame>: get_valve_data_frames(...)
+    +Dict<string, DataFrame>: get_structure_data_frames(...)
+    +DataFrame: get_discharge_data_frame(...)
+    +DataFrame: get_link_coordinates_data_frame(...)
+}
+
+abstract res1d_extractors #lightgreen {
+    +Dict<string, DataFrame>: extract_element_ts(...)
+    +void: res1d_extractor(...)
+    +void: batch_res1d_extractor(...)
+}
+
+}
+
+package inputs {
+
+abstract input_xlsx #lightgreen {
+    +void: create_template_xlsx(...)
+    +void: write_dataframes_to_xlxs(...)
+    +Dict<string, DataFrame>: read_res1d_files_dataframes_from_xlsx(...)
+    +Dict<string, DataFrame>: read_element_collections_dataframes_from_xlsx(...)
+    +Dict<string, DataFrame>: read_output_files_dataframes_from_xlsx(...)
+    +[{}, {}, {}]: read_dataframes_from_xlsx(...)
+}
+
+abstract input_dataframes #lightgreen {
+    +Dict<string, DataFrame>: create_res1d_files_dataframe_template()
+    +Dict<string, DataFrame>: create_element_collections_dataframes_template()
+    +Dict<string, DataFrame>: create_output_files_dataframe_template()
+    +Dict: create_res1d_collections_from_dataframes(...)
+    +ElementCollection[]: create_element_collections_from_dataframes(...)
+    +Dict: create_excel_collection_from_dataframes(...)
+}
+
+abstract json_to_dfs #lightgreen {
+    +[dfs, outputs, res1d, combined]: load_json_data(...)
+    +DataFrame: clean_dataframe(df)
+    +list: normalize_combined(...)
+    +void: save_to_json(...)
+    +string[]: validate_combined(...)
+}
+
+}
+
+package utilities {
+
+abstract utilities #lightgreen {
+    +list: list_cleanup(...)
+}
+
+abstract utilities_plotly #lightgreen {
+    +Figure/html: draw_graph(...)
+    +Figure/html: draw_sub_graphs(...)
+    +Figure/html: draw_table(...)
+}
+
+}
+
+' Structural relationships
+BaseElement <|-- SimpleElement : extends
+BaseElement <|-- CombinedElement : extends
+ElementCollection "1" *-- "many" BaseElement : contains
+CombinedElement "1" *-- "many" BaseElement : uses
+BaseElement <-- statistics_calculator : calculates stats
+
+Res1D <|-- Res1DNetwork : extends
+Res1D <|-- Res1DRunoff : extends
+res1d_extractors *-- Res1D : uses
+res1d_extractors ..> ElementCollection : updates
+
+input_xlsx ..> input_dataframes : template dataframes
+input_dataframes ..> ElementCollection : creates
+input_dataframes ..> SimpleElement : creates
+json_to_dfs ..> input_xlsx : JSON template support
+
+res1d2excel --> input_xlsx : reads templates
+res1d2excel --> input_dataframes : creates collections
+res1d2excel --> res1d_extractors : extracts
+res1d2excel --> exporter : builds output dataframes
+res1d2excel --> exporter_xlsx : writes xlsx
+main ..> res1d2excel : placeholder entry point
+
+utilities_plotly ..> exporter : optional visualization
+Res1D ..> utilities : uses
+
+' Hidden nudges for a compact, old-style layout.
+elements -[hidden]right- outputs
+outputs -[hidden]right- app
+app -[hidden]right- res1d
+app -[hidden]down- inputs
+elements -[hidden]down- utilities
+
+@enduml
