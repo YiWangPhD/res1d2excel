@@ -93,13 +93,13 @@ def integral_block(s, window = default_window):
         s = s.resample(window, closed = 'right').sum()
         return s.iloc[1:]
     else:
-        return np.NaN
+        return np.nan
 
 def integral(s):
     if s.size == 0:
-        return np.NaN
+        return np.nan
     s = integral_block(s)
-    return np.NaN if s is np.NaN else s.sum()
+    return np.nan if s is np.nan else s.sum()
 
 def last_timestep(s):
     return s.iloc[-1]
