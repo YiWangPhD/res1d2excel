@@ -91,8 +91,8 @@ def create_element_collections_dataframes_template():
 
 def create_output_files_dataframe_template():
     output_specifications_df = pd.DataFrame({
-        'type': ['folder_path', 'resample_t', 'by_elements', 'by_file', 'stats'],
-        'value': [os.getcwd(), '5min', 
+        'type': ['folder_path', 'resample_t', 'skip_time', 'trunc_time', 'by_elements', 'by_file', 'stats'],
+        'value': [os.getcwd(), '5min', '2h', '6h',
                   r"by_element.xlsx", r"by_file.xlsx", r"stats.xlsx"]
         })
     return {'output_files': output_specifications_df}
@@ -141,14 +141,32 @@ def create_excel_collection_from_dataframes(dfs):
         resample_t = xlsx_dict.pop('resample_t')
     else:
         resample_t = None
+
+    if 'skip_time' in xlsx_dict:
+        skip_time = xlsx_dict.pop('skip_time')
+    else:
+        skip_time = None
+
+    if 'trunc_time' in xlsx_dict:
+        trunc_time = xlsx_dict.pop('trunc_time')
+    else:
+        trunc_time = None
         
     if resample_t == 0:
         resample_t = None
+
+    if skip_time == 0:
+        skip_time = None
+
+    if trunc_time == 0:
+        trunc_time = None
 
     for k, v in xlsx_dict.items():
         xlsx_dict[k] = os.path.join(folder_path, xlsx_dict[k])
         
     xlsx_dict['resample_t'] = resample_t
+    xlsx_dict['skip_time'] = skip_time
+    xlsx_dict['trunc_time'] = trunc_time
     
     return xlsx_dict
 

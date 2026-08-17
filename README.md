@@ -41,6 +41,12 @@ Instructions:
 	Example resample intervals are 1day, 2h, 5min, 30s
 	Using unacceptable intervals will cause unexpected errors. No checking here.
 	see https://pandas.pydata.org/docs/reference/api/pandas.Timedelta.html
+
+	You can specify a skip time using the keyword "skip_time" to remove time series data
+	from the beginning of each res1d file before statistics and outputs are generated.
+	You can specify a truncation time using the keyword "trunc_time" to remove time series data
+	from the end of each res1d file before statistics and outputs are generated.
+	Example skip and truncation times use the same format as resample_t: 1day, 24h, 30min, 30s
 	
 4. Possible quantities for catchment simulations:
 	NetRainfall, TotalRunOff, 

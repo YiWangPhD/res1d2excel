@@ -12,6 +12,8 @@ const data = {
     output_files: {
         output_folder: "",
         resample_interval: "",
+        skip_time: "",
+        trunc_time: "",
         export_by_element: false,
         export_by_result_file: false,
         export_statistics: false
@@ -136,6 +138,28 @@ function outputFilesHTML() {
             <option value="second">second</option>
         </select><br>
 
+        <label>Skip Time</label>
+        <input type="number" id="of-skip-value" min="0" step="1"
+               style="width:80px;" oninput="updateOutputFiles()">
+
+        <select id="of-skip-unit" onchange="updateOutputFiles()">
+            <option value="day">day</option>
+            <option value="hour">hour</option>
+            <option value="minute">minute</option>
+            <option value="second">second</option>
+        </select><br>
+
+        <label>Truncation Time</label>
+        <input type="number" id="of-trunc-value" min="0" step="1"
+               style="width:80px;" oninput="updateOutputFiles()">
+
+        <select id="of-trunc-unit" onchange="updateOutputFiles()">
+            <option value="day">day</option>
+            <option value="hour">hour</option>
+            <option value="minute">minute</option>
+            <option value="second">second</option>
+        </select><br>
+
         <label>Export by Element</label>
         <input type="checkbox" id="of-e1" onchange="updateOutputFiles()"><br>
 
@@ -145,6 +169,45 @@ function outputFilesHTML() {
         <label>Export Statistics</label>
         <input type="checkbox" id="of-e3" onchange="updateOutputFiles()">
     `;
+}
+
+function setDurationControls(prefix, duration, defaultUnit) {
+    const valueEl = document.getElementById(`${prefix}-value`);
+    const unitEl = document.getElementById(`${prefix}-unit`);
+
+    if (!duration) {
+        valueEl.value = 0;
+        unitEl.value = defaultUnit;
+        return;
+    }
+
+    const match = String(duration).trim().match(/^([0-9.]+)\s*([a-zA-Z]+)$/);
+    if (!match) {
+        valueEl.value = 0;
+        unitEl.value = defaultUnit;
+        return;
+    }
+
+    const unitMap = {
+        d: "day",
+        day: "day",
+        days: "day",
+        h: "hour",
+        H: "hour",
+        hr: "hour",
+        hour: "hour",
+        hours: "hour",
+        min: "minute",
+        minute: "minute",
+        minutes: "minute",
+        s: "second",
+        sec: "second",
+        second: "second",
+        seconds: "second"
+    };
+
+    valueEl.value = parseFloat(match[1]);
+    unitEl.value = unitMap[match[2]] || defaultUnit;
 }
 
 function renderOutputFiles() {
@@ -162,6 +225,9 @@ function renderOutputFiles() {
         document.getElementById("of-interval-unit").value = parts[1];
     }
 
+    setDurationControls("of-skip", o.skip_time, "hour");
+    setDurationControls("of-trunc", o.trunc_time, "hour");
+
     document.getElementById("of-e1").checked = o.export_by_element || false;
     document.getElementById("of-e2").checked = o.export_by_result_file || false;
     document.getElementById("of-e3").checked = o.export_statistics || false;
@@ -170,6 +236,10 @@ function renderOutputFiles() {
 function updateOutputFiles() {
     let value = parseFloat(document.getElementById("of-interval-value").value);
     let unit = document.getElementById("of-interval-unit").value;
+    let skipValue = parseFloat(document.getElementById("of-skip-value").value);
+    let skipUnit = document.getElementById("of-skip-unit").value;
+    let truncValue = parseFloat(document.getElementById("of-trunc-value").value);
+    let truncUnit = document.getElementById("of-trunc-unit").value;
 
     // ✅ validation
     if (isNaN(value) || value < 0) {
@@ -178,15 +248,39 @@ function updateOutputFiles() {
         document.getElementById("of-interval-value").value = 0;
     }
 
+    if (isNaN(skipValue) || skipValue < 0) {
+        alert("Skip time must be >= 0");
+        skipValue = 0;
+        document.getElementById("of-skip-value").value = 0;
+    }
+
+    if (isNaN(truncValue) || truncValue < 0) {
+        alert("Truncation time must be >= 0");
+        truncValue = 0;
+        document.getElementById("of-trunc-value").value = 0;
+    }
+
     // ✅ construct string OR null
     let resample = null;
     if (value > 0) {
         resample = `${value} ${unit}`;
     }
 
+    let skipTime = null;
+    if (skipValue > 0) {
+        skipTime = `${skipValue} ${skipUnit}`;
+    }
+
+    let truncTime = null;
+    if (truncValue > 0) {
+        truncTime = `${truncValue} ${truncUnit}`;
+    }
+
     data.output_files = {
         output_folder: document.getElementById("of-folder").value,
         resample_interval: resample,
+        skip_time: skipTime,
+        trunc_time: truncTime,
 
         export_by_element: document.getElementById("of-e1").checked,
         export_by_result_file: document.getElementById("of-e2").checked,

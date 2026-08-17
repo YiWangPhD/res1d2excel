@@ -90,6 +90,8 @@
   "output_files": {
     "output_folder": "C:/output",
     "resample_interval": "10 minute",
+    "skip_time": "2 hours",
+    "trunc_time": "6 hours",
     "export_by_element": true,
     "export_by_result_file": false,
     "export_statistics": true

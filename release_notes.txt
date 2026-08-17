@@ -26,13 +26,15 @@ v1.2.1 - 2026-8-16
 fixed discrepancies between old simple_element_collection and new element_collection
 using uv to manage packages
 
+v1.2.2 - 2026-8-16
+Added "skip_time" option to remove time series data from the beginning of each res1d file before statistics and outputs are generated.
+Added "trunc_time" option to remove time series data from the end of each res1d file before statistics and outputs are generated.
 
 to do list:
     combined elements
     use json input file
     webpage to create json input file
     
-    hours to skip at the begining and truncate at the end
     extract multiple time periods from the same res1d file
     export to html and pdf
     also show monitored data on html or pdf

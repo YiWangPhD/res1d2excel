@@ -6,10 +6,16 @@
 # SimpleElementCollection instances
 
 import element_collection
+import pandas as pd
 import res1d_network
 import res1d_runoff
 
-def batch_res1d_extractor(res1d_dict, elem_collection_list):
+def batch_res1d_extractor(
+        res1d_dict,
+        elem_collection_list,
+        skip_time=None,
+        trunc_time=None
+        ):
     """
     enumerate through res1d file dictionary and extract data according
     to simple element collection list
@@ -20,6 +26,12 @@ def batch_res1d_extractor(res1d_dict, elem_collection_list):
         this dictionary holds collection of res1d file paths
     elem_collection_list : list of element collections
         list of element collections
+    skip_time : str, optional
+        pandas-compatible duration to remove from the beginning of each result
+        file, e.g. '24h' or '30min'. The default is None.
+    trunc_time : str, optional
+        pandas-compatible duration to remove from the end of each result file,
+        e.g. '6h' or '30min'. The default is None.
 
     Returns
     -------
@@ -30,15 +42,92 @@ def batch_res1d_extractor(res1d_dict, elem_collection_list):
         for short_name, res1d_file_path in res1d_dict['network'].items():
             print(f'Loading res1d file {res1d_file_path} ...')
             res1d = res1d_network.Res1DNetwork(res1d_file_path)
+            apply_time_range(res1d, skip_time, trunc_time)
             print(f'Extracting data from res1d file {short_name} ...')
             res1d_extractor(short_name, res1d, elem_collection_list)
     if 'runoff' in res1d_dict:
         for short_name, res1d_file_path in res1d_dict['runoff'].items():
             print(f'Loading res1d file {res1d_file_path} ...')
             res1d = res1d_runoff.Res1DRunoff(res1d_file_path)
+            apply_time_range(res1d, skip_time, trunc_time)
             print(f'Extracting data from res1d file {short_name} ...')
             res1d_extractor(short_name, res1d, elem_collection_list)
-            
+
+
+def parse_time_delta(value, name):
+    """
+    Convert a user-provided duration to a non-negative pandas Timedelta.
+
+    Parameters
+    ----------
+    value : str
+        pandas-compatible duration, e.g. '24h' or '30min'.
+    name : str
+        name of the configuration field.
+
+    Returns
+    -------
+    pd.Timedelta
+
+    """
+    if value is None or pd.isna(value) or value == 0:
+        return pd.Timedelta(0)
+
+    if isinstance(value, str) and not value.strip():
+        return pd.Timedelta(0)
+
+    try:
+        delta = pd.Timedelta(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid {name}: {value}") from exc
+
+    if delta < pd.Timedelta(0):
+        raise ValueError(f"{name} must be non-negative: {value}")
+
+    return delta
+
+
+def apply_time_range(res1d, skip_time=None, trunc_time=None):
+    """
+    Update a Res1D extraction window to trim the beginning and end.
+
+    Parameters
+    ----------
+    res1d : Res1DNetwork or Res1DRunoff
+        instance of res1d class.
+    skip_time : str, optional
+        pandas-compatible duration to remove from the beginning.
+    trunc_time : str, optional
+        pandas-compatible duration to remove from the end.
+
+    Returns
+    -------
+    None.
+
+    """
+    skip_delta = parse_time_delta(skip_time, 'skip_time')
+    trunc_delta = parse_time_delta(trunc_time, 'trunc_time')
+
+    if skip_delta == pd.Timedelta(0) and trunc_delta == pd.Timedelta(0):
+        return
+
+    original_from_time_stamp = res1d.from_time_stamp
+    original_to_time_stamp = res1d.to_time_stamp
+    result_time_span = original_to_time_stamp - original_from_time_stamp
+
+    if skip_delta + trunc_delta > result_time_span:
+        raise ValueError(
+            f"skip_time + trunc_time ({skip_delta + trunc_delta}) exceeds "
+            f"res1d result time span ({result_time_span}). "
+            f"skip_time={skip_time}, trunc_time={trunc_time}"
+        )
+
+    from_time_stamp = original_from_time_stamp + skip_delta
+    to_time_stamp = original_to_time_stamp - trunc_delta
+
+    res1d.setTimeRange(from_time_stamp, to_time_stamp)
+
+
 def res1d_extractor(short_name, res1d, elem_collection_list):
     """
     enumerate through list of simple element collections and extract data
