@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 # Author: Yi Wang
-# version: 1.2.2
+# version: 1.2.3
 # purpos: main function to extract res1d results to excel files
 
 import os
 import sys
 import input_dataframes
 import input_xlsx
+import input_json
 import res1d_extractors
 import exporter
 import exporter_xlsx
@@ -17,6 +18,8 @@ import pickle
 def read_input_files(args):
     if len(sys.argv) == 2 and os.path.isfile(sys.argv[1]):
         # one input file
+        if os.path.splitext(sys.argv[1])[1].lower() == '.json':
+            return input_json.read_dataframes_from_json(sys.argv[1])
         return input_xlsx.read_dataframes_from_xlsx(sys.argv[1])
     if len(sys.argv) == 4 and os.path.isfile(sys.argv[1]) and os.path.isfile(sys.argv[2]) and os.path.isfile(sys.argv[3]):
         return input_xlsx.read_dataframes_from_xlsx(sys.argv[1], sys.argv[2], sys.argv[3])
@@ -62,8 +65,11 @@ def main():
     if len(sys.argv) == 1:
         #create templates
         xlsx_file_path = os.path.join(os.getcwd(), "res1d2excel_template.xlsx")
+        json_file_path = os.path.join(os.getcwd(), "res1d2excel_template.json")
         input_xlsx.create_template_xlsx(xlsx_file_path)
+        input_json.create_template_json(json_file_path)
         print(f'Spreadsheet template has been created and saved at: {xlsx_file_path}')
+        print(f'JSON template has been created and saved at: {json_file_path}')
         exit()
     
     #process input files

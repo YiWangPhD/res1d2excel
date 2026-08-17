@@ -30,9 +30,11 @@ v1.2.2 - 2026-8-16
 Added "skip_time" option to remove time series data from the beginning of each res1d file before statistics and outputs are generated.
 Added "trunc_time" option to remove time series data from the end of each res1d file before statistics and outputs are generated.
 
+v1.2.3 - 2026-8-16
+support using json input file
+
 to do list:
     combined elements
-    use json input file
     webpage to create json input file
     
     extract multiple time periods from the same res1d file
