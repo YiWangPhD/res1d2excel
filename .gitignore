@@ -14,6 +14,5 @@ wheels/
 *.xlsx
 
 # Excluded uml files
-res1d_UML_v1.1.png
-res1d_UML_v1.2.png
+*.png
 res1d_UML_v1.2.txt

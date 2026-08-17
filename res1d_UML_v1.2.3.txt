@@ -239,6 +239,17 @@ abstract input_xlsx #lightgreen {
     +[{}, {}, {}]: read_dataframes_from_xlsx(...)
 }
 
+abstract input_json #lightgreen {
+    +void: create_template_json(...)
+    +void: write_dataframes_to_json(...)
+    +[{}, {}, {}]: read_dataframes_from_json(...)
+    +[res1d, dfs, outputs, combined]: load_json_data(...)
+    +DataFrame: clean_dataframe(df)
+    +list: normalize_combined(...)
+    +void: save_to_json(...)
+    +string[]: validate_combined(...)
+}
+
 abstract input_dataframes #lightgreen {
     +Dict<string, DataFrame>: create_res1d_files_dataframe_template()
     +Dict<string, DataFrame>: create_element_collections_dataframes_template()
@@ -246,14 +257,6 @@ abstract input_dataframes #lightgreen {
     +Dict: create_res1d_collections_from_dataframes(...)
     +ElementCollection[]: create_element_collections_from_dataframes(...)
     +Dict: create_excel_collection_from_dataframes(...)
-}
-
-abstract json_to_dfs #lightgreen {
-    +[dfs, outputs, res1d, combined]: load_json_data(...)
-    +DataFrame: clean_dataframe(df)
-    +list: normalize_combined(...)
-    +void: save_to_json(...)
-    +string[]: validate_combined(...)
 }
 
 }
@@ -285,11 +288,12 @@ res1d_extractors *-- Res1D : uses
 res1d_extractors ..> ElementCollection : updates
 
 input_xlsx ..> input_dataframes : template dataframes
+input_json ..> input_dataframes : template dataframes
 input_dataframes ..> ElementCollection : creates
 input_dataframes ..> SimpleElement : creates
-json_to_dfs ..> input_xlsx : JSON template support
 
 res1d2excel --> input_xlsx : reads templates
+res1d2excel --> input_json : reads JSON templates
 res1d2excel --> input_dataframes : creates collections
 res1d2excel --> res1d_extractors : extracts
 res1d2excel --> exporter : builds output dataframes
