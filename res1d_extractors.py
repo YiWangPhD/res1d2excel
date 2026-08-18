@@ -175,8 +175,15 @@ def update_combined_element_collections(elem_collection_list):
         if not is_calculated_collection(elem_collection):
             continue
         print(f'Updating {elem_collection.get_element_type()} data ...')
+        print_combined_equations(elem_collection)
         elem_collection.update_ts()
         elem_collection.update_statistics()
+
+
+def print_combined_equations(elem_collection):
+    for element in elem_collection.get_all_elements():
+        print(f"{element.get_element_id()} =")
+        print(element.print_equation())
 
 
 def extract_element_ts(res1d, elem_collection):

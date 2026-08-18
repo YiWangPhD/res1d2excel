@@ -196,14 +196,22 @@ def _output_files_json_to_dataframe(output_files):
 
 def write_dataframes_to_json(json_file_path, dfs, combined=None):
     data = {}
+    combined_from_dataframe = None
 
     for name, df in dfs.items():
         if name == "output_files":
             data[name] = _output_files_dataframe_to_json(df)
+        elif name == "combined":
+            combined_from_dataframe = input_dataframes.create_combined_from_dataframe(df)
         else:
             data[name] = _dataframe_to_records(df)
 
-    data["combined"] = combined or []
+    if combined is not None:
+        data["combined"] = combined
+    elif combined_from_dataframe is not None:
+        data["combined"] = combined_from_dataframe
+    else:
+        data["combined"] = []
 
     with open(json_file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, allow_nan=False)
@@ -213,6 +221,7 @@ def create_template_json(json_file_path):
     dfs = input_dataframes.create_element_collections_dataframes_template()
     dfs = dfs | input_dataframes.create_res1d_files_dataframe_template()
     dfs = dfs | input_dataframes.create_output_files_dataframe_template()
+    dfs = dfs | input_dataframes.create_combined_dataframe_template()
     write_dataframes_to_json(json_file_path, dfs)
 
 

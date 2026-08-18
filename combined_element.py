@@ -9,7 +9,6 @@
 from __future__ import annotations
 
 from typing import Dict, Optional, List
-import os
 import pandas as pd
 import warnings
 
@@ -79,12 +78,12 @@ class CombinedElement(BaseElement):
         lines: List[str] = []
 
         for e in self._positive_elements:
-            lines.append(f"+ {e.get_element_string()}")
+            lines.append(f"+ {self._get_element_reference(e)}")
 
         for e in self._negative_elements:
-            lines.append(f"- {e.get_element_string()}")
+            lines.append(f"- {self._get_element_reference(e)}")
 
-        return os.linesep.join(lines) if lines else "0"
+        return "\n".join(lines) if lines else "0"
 
     # -------------------------
     # Time series (derived)
@@ -161,7 +160,16 @@ class CombinedElement(BaseElement):
     # -------------------------
 
     def __str__(self) -> str:
-        return f"{self._element_id} =\n{self.print_equation()}"
+        lines: List[str] = []
+
+        for e in self._positive_elements:
+            lines.append(f"+ {e.get_element_string()}")
+
+        for e in self._negative_elements:
+            lines.append(f"- {e.get_element_string()}")
+
+        equation = "\n".join(lines) if lines else "0"
+        return f"{self._element_id} =\n{equation}"
 
     def __repr__(self) -> str:
         return f"<CombinedElement {self._element_id}>"
@@ -169,6 +177,12 @@ class CombinedElement(BaseElement):
     # -------------------------
     # Internal helpers
     # -------------------------
+
+    def _get_element_reference(self, element: BaseElement) -> str:
+        alias = element.get_element_alias()
+        if alias:
+            return f"{element.get_element_type()}.{alias}"
+        return element.get_element_string()
     
     def _get_common_index(self, series_list: List[pd.Series]) -> pd.Index:
         index = series_list[0].index

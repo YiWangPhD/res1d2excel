@@ -597,7 +597,7 @@ wheels = [
 
 [[package]]
 name = "res1d2excel"
-version = "1.2.4"
+version = "1.2.5"
 source = { virtual = "." }
 dependencies = [
     { name = "mikeio1d" },

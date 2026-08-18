@@ -5,8 +5,11 @@
 
 import os
 import pandas as pd
-from typing import Dict, List
+from typing import Dict, List, Any
 import element_collection
+
+
+COMBINED_QUANTITY = "CalculatedDischarge"
 
 
 # create dataframe templates
@@ -101,11 +104,96 @@ def create_output_files_dataframe_template():
 def create_res1d_files_dataframe_template():
     res1d_files_df = pd.DataFrame({
         'result_type': ['network', 'runoff'],
-        'short_name': ['HD', 'RR'],
-        'res1d_file_path': [os.path.join(os.getcwd(), 'test_data', 'Rainfall_CDS_1yearHDBaseDefault_Network_HD.res1d'), 
-                            os.path.join(os.getcwd(), 'test_data', 'Rainfall_CDS_1_yearRRBaseDefault_Surface_runoff.res1d')]
+        'short_name': ['event1', 'event1'],
+        'res1d_file_path': [
+            os.path.join(
+                os.getcwd(),
+                'test_data',
+                'Rainfall_CDS_1yearHDBaseDefault_Network_HD.res1d'
+            ),
+            os.path.join(
+                os.getcwd(),
+                'test_data',
+                'Rainfall_CDS_1_yearRRBaseDefault_Surface_runoff.res1d'
+            )
+        ]
         })
     return {'res1d_files': res1d_files_df}
+
+
+def create_combined_dataframe_template():
+    combined_df = pd.DataFrame({
+        'combined_alias': ['Combined1', 'Combined1', 'Combined1', 'Combined1'],
+        'quantity': [COMBINED_QUANTITY, COMBINED_QUANTITY,
+                     COMBINED_QUANTITY, COMBINED_QUANTITY],
+        'op': ['+', '-', '+', '-'],
+        'source': ['link', 'orifice', 'catchment', 'pump'],
+        'source_alias': ['C15152001.2_Discharge',
+                         'Orifice_6_Discharge',
+                         'S15155401_TotalRunOff',
+                         'Pump_1_to_WWTP_Discharge']
+        })
+    return {'combined': combined_df}
+
+
+def create_combined_from_dataframe(
+        combined_df: pd.DataFrame
+        ) -> List[Dict[str, Any]]:
+    if combined_df.empty:
+        return []
+
+    required_columns = ['combined_alias', 'op', 'source', 'source_alias']
+    missing_columns = [
+        col for col in required_columns if col not in combined_df.columns
+    ]
+    if missing_columns:
+        raise ValueError(
+            f"Combined dataframe missing columns: {', '.join(missing_columns)}"
+        )
+
+    combined_df = combined_df.replace("", pd.NA)
+    combined = []
+    combined_lookup = {}
+
+    for _, row in combined_df.iterrows():
+        combined_alias = row.get('combined_alias')
+        source = row.get('source')
+        source_alias = row.get('source_alias')
+
+        if pd.isna(combined_alias) and pd.isna(source) and pd.isna(source_alias):
+            continue
+
+        if pd.isna(combined_alias) or pd.isna(source) or pd.isna(source_alias):
+            raise ValueError(
+                "Combined rows must include combined_alias, source, "
+                "and source_alias"
+            )
+
+        combined_alias = str(combined_alias)
+        source = str(source)
+        source_alias = str(source_alias)
+
+        op = row.get('op', '+')
+        if pd.isna(op):
+            op = '+'
+        op = str(op)
+
+        if combined_alias not in combined_lookup:
+            item = {
+                'alias': combined_alias,
+                'quantity': COMBINED_QUANTITY,
+                'terms': []
+            }
+            combined_lookup[combined_alias] = item
+            combined.append(item)
+
+        combined_lookup[combined_alias]['terms'].append({
+            'op': op,
+            'source': source,
+            'alias': source_alias
+        })
+
+    return combined
 
 
 # create collections from dataframes

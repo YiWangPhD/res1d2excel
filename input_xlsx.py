@@ -20,6 +20,7 @@ def create_template_xlsx(xlsx_file_path):
     dfs = input_dataframes.create_element_collections_dataframes_template()
     dfs = dfs | input_dataframes.create_res1d_files_dataframe_template()
     dfs = dfs | input_dataframes.create_output_files_dataframe_template()
+    dfs = dfs | input_dataframes.create_combined_dataframe_template()
     write_dataframes_to_xlxs(xlsx_file_path, dfs)
 
 
@@ -51,13 +52,32 @@ def read_res1d_files_dataframes_from_xlsx(xlsx_file_path):
     return dfs
 
 
+def read_combined_dataframe_from_xlsx(xlsx_file_path):
+    try:
+        dfs = pd.read_excel(xlsx_file_path,
+                            sheet_name=['combined'],
+                            dtype={'combined_alias': object,
+                                   'quantity': object,
+                                   'op': object,
+                                   'source': object,
+                                   'source_alias': object})
+    except ValueError as exc:
+        if "Worksheet named 'combined' not found" in str(exc):
+            return pd.DataFrame()
+        raise
+
+    return dfs['combined']
+
+
 def read_dataframes_from_xlsx(xlsx_file_path):
 
     res1d_file_dfs = read_res1d_files_dataframes_from_xlsx(xlsx_file_path)
     element_collections_dfs = read_element_collections_dataframes_from_xlsx(xlsx_file_path)
     output_files_dfs = read_output_files_dataframes_from_xlsx(xlsx_file_path)
+    combined_df = read_combined_dataframe_from_xlsx(xlsx_file_path)
+    combined = input_dataframes.create_combined_from_dataframe(combined_df)
 
-    return [res1d_file_dfs, element_collections_dfs, output_files_dfs, []]
+    return [res1d_file_dfs, element_collections_dfs, output_files_dfs, combined]
     
 
 def main():

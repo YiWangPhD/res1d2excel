@@ -36,9 +36,10 @@ support using json input file
 v1.2.4 - 2026-8-17
 support combined elements in JSON input
 
+v1.2.5 - 2026-8-17
+support combined elements in xlsx input
+
 to do list:
-    webpage to create json input file
-    
     extract multiple time periods from the same res1d file
     export to html and pdf
     also show monitored data on html or pdf
