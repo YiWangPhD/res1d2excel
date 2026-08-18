@@ -254,12 +254,12 @@
   "res1d_files": [
     {
       "result_type": "network",
-      "short_name": "HD",
+      "short_name": "event1",
       "res1d_file_path": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel\\test_data\\Rainfall_CDS_1yearHDBaseDefault_Network_HD.res1d"
     },
     {
       "result_type": "runoff",
-      "short_name": "RR",
+      "short_name": "event1",
       "res1d_file_path": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel\\test_data\\Rainfall_CDS_1_yearRRBaseDefault_Surface_runoff.res1d"
     }
   ],
@@ -272,5 +272,32 @@
     "export_by_result_file": true,
     "export_statistics": true
   },
-  "combined": []
+  "combined": [
+    {
+      "alias": "Combined1",
+      "quantity": "CalculatedDischarge",
+      "terms": [
+        {
+          "op": "+",
+          "source": "link",
+          "alias": "C15152001.2_Discharge"
+        },
+        {
+          "op": "-",
+          "source": "orifice",
+          "alias": "Orifice_6_Discharge"
+        },
+        {
+          "op": "+",
+          "source": "catchment",
+          "alias": "S15155401_TotalRunOff"
+        },
+        {
+          "op": "-",
+          "source": "pump",
+          "alias": "Pump_1_to_WWTP_Discharge"
+        }
+      ]
+    }
+  ]
 }

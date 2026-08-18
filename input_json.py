@@ -71,7 +71,7 @@ def normalize_combined(combined_list):
     for item in combined_list:
         new_item = {
             "alias": item.get("alias", ""),
-            "quantity": "Discharge",
+            "quantity": "CalculatedDischarge",
             "terms": []
         }
 
@@ -217,7 +217,7 @@ def create_template_json(json_file_path):
 
 
 def read_dataframes_from_json(json_file_path):
-    res1d_files_df, element_collections_dfs, output_files, _combined = load_json_data(json_file_path)
+    res1d_files_df, element_collections_dfs, output_files, combined = load_json_data(json_file_path)
 
     if "file_path" in res1d_files_df.columns:
         res1d_files_df = res1d_files_df.rename(columns={"file_path": "res1d_file_path"})
@@ -225,7 +225,7 @@ def read_dataframes_from_json(json_file_path):
     res1d_file_dfs = {"res1d_files": res1d_files_df}
     output_files_dfs = _output_files_json_to_dataframe(output_files)
 
-    return [res1d_file_dfs, element_collections_dfs, output_files_dfs]
+    return [res1d_file_dfs, element_collections_dfs, output_files_dfs, combined]
 
 
 def main():

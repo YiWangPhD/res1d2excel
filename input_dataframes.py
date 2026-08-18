@@ -5,8 +5,8 @@
 
 import os
 import pandas as pd
+from typing import Dict, List
 import element_collection
-import simple_element
 
 
 # create dataframe templates
@@ -109,24 +109,10 @@ def create_res1d_files_dataframe_template():
 
 
 # create collections from dataframes
-def create_element_collections_from_dataframes(dfs):
-    element_collections = []
-    for element_type, element_df in dfs.items():
-        ts_manager = element_collection.ElementCollection(element_type)
-        element_df = element_df.fillna(0)
-        for index, row in element_df.iterrows():
-            alias = row.iloc[0]
-            if alias == 0:
-                alias = None
-            quantity = row.iloc[1]
-            muid = str(row.iloc[2])
-            if len(row) > 3:
-                chainage = row.iloc[3]
-                ts_manager.add_element(simple_element.SimpleElement(muid, alias, element_type, quantity, chainage))
-            else:
-                ts_manager.add_element(simple_element.SimpleElement(muid, alias, element_type, quantity))
-        element_collections.append(ts_manager)
-    return element_collections
+def create_element_collections_from_dataframes(
+        dfs: Dict[str, pd.DataFrame]
+        ) -> List[element_collection.ElementCollection]:
+    return element_collection.ElementCollection.create_simple_collections_from_dataframes(dfs)
 
 
 def create_excel_collection_from_dataframes(dfs):

@@ -405,7 +405,7 @@ function renderCombinedTable() {
 
         row.innerHTML = `
             <td>${item.alias}</td>
-            <td>Discharge</td>
+            <td>CalculatedDischarge</td>
             <td>${termsStr}</td>
             <td>
                 <button onclick="event.stopPropagation();deleteCombined(${i})">Delete</button>
@@ -427,7 +427,7 @@ function renderCombinedForm(index) {
         <input id="comb-alias" value="${item.alias}" oninput="updateCombined(${index})"><br>
 
         <label>Quantity</label>
-        <input value="Discharge" readonly><br>
+        <input value="CalculatedDischarge" readonly><br>
 
         <h4>Terms</h4>
         <div id="terms-container"></div>
@@ -481,7 +481,7 @@ function renderTerms(index) {
 function addCombinedItem() {
     data.combined.push({
         alias: "",
-        quantity: "Discharge",
+        quantity: "CalculatedDischarge",
         terms: [
             { op: "+", source: "node", alias: "" }
         ]
@@ -775,7 +775,7 @@ function loadJSON() {
         data.combined.forEach(item => {
 
             if (!item.alias) item.alias = "";
-            item.quantity = "Discharge";
+            item.quantity = "CalculatedDischarge";
 
             if (!Array.isArray(item.terms)) {
                 item.terms = [];
@@ -851,7 +851,7 @@ ${section("0. Environment Required", `
 </ul>
 `)}
 
-${section("1. Generate Template Spreadsheet", `
+${section("1. Generate Template Spreadsheet and JSON", `
 <pre>python res1d2excel.py</pre>
 `)}
 

@@ -17,12 +17,15 @@ from base_element import BaseElement
 import statistics_calculator
 
 
+CALCULATED_DISCHARGE = "CalculatedDischarge"
+
+
 class CombinedElement(BaseElement):
     
     def __init__(
         self, 
         name: str, 
-        quantity_id: str = "CalculatedDischarge",
+        quantity_id: str = CALCULATED_DISCHARGE,
         fill_outside: Optional[float] = 0,
         interpolation_method: str = "time",
         ) -> None:

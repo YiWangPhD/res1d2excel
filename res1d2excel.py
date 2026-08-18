@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Author: Yi Wang
-# version: 1.2.3
+# version: 1.2.4
 # purpos: main function to extract res1d results to excel files
 
 import os
@@ -11,34 +11,51 @@ import input_json
 import res1d_extractors
 import exporter
 import exporter_xlsx
+import element_collection
 import pickle
+from typing import Any, List
+
+
+# [res1d_file_dfs, element_collections_dfs, output_files_dfs, combined]
+InputDataframes = List[Any]
 
 
 # read input files to dataframes
-def read_input_files(args):
-    if len(sys.argv) == 2 and os.path.isfile(sys.argv[1]):
+def read_input_files(args: List[str]) -> InputDataframes:
+    if len(args) == 2 and os.path.isfile(args[1]):
         # one input file
-        if os.path.splitext(sys.argv[1])[1].lower() == '.json':
-            return input_json.read_dataframes_from_json(sys.argv[1])
-        return input_xlsx.read_dataframes_from_xlsx(sys.argv[1])
-    if len(sys.argv) == 4 and os.path.isfile(sys.argv[1]) and os.path.isfile(sys.argv[2]) and os.path.isfile(sys.argv[3]):
-        return input_xlsx.read_dataframes_from_xlsx(sys.argv[1], sys.argv[2], sys.argv[3])
-    print('Please provide one or three input files.')
+        if os.path.splitext(args[1])[1].lower() == '.json':
+            return input_json.read_dataframes_from_json(args[1])
+        return input_xlsx.read_dataframes_from_xlsx(args[1])
+    print('Please provide one input file.')
     exit()
 
 
 # build collections from dataframes
-def create_collections(dfs_list):
-    [res1d_file_dfs, element_collections_dfs, output_files_dfs] = dfs_list
-    
+def create_collections(
+        dfs_list: InputDataframes
+        ) -> list[object]:
+    [res1d_file_dfs, element_collections_dfs, output_files_dfs, combined] = dfs_list
+
     res1d_dict = input_dataframes.create_res1d_collections_from_dataframes(res1d_file_dfs)
     element_collections = input_dataframes.create_element_collections_from_dataframes(element_collections_dfs)
+    combined_collection = element_collection.ElementCollection.create_combined_collection(
+        combined,
+        element_collections,
+        input_json.DISCHARGE_QUANTITIES
+    )
+    if len(combined_collection) > 0:
+        element_collections.append(combined_collection)
     xlsx_dict = input_dataframes.create_excel_collection_from_dataframes(output_files_dfs)
 
     return [res1d_dict, element_collections, xlsx_dict]
 
 
-def export_results(element_collections, xlsx_dict, export_pickles = True):
+def export_results(
+        element_collections: List[element_collection.ElementCollection],
+        xlsx_dict: dict,
+        export_pickles: bool = True
+        ) -> None:
     resample_t = xlsx_dict['resample_t']
     
     for file_tag in ['by_elements', 'by_file', 'stats']:
@@ -86,6 +103,7 @@ def main():
         xlsx_dict['skip_time'],
         xlsx_dict['trunc_time']
         )
+    res1d_extractors.update_combined_element_collections(element_collections)
     print("Finished extracting res1d files. ")
     
     # # export dataframes

@@ -52,12 +52,12 @@ def read_res1d_files_dataframes_from_xlsx(xlsx_file_path):
 
 
 def read_dataframes_from_xlsx(xlsx_file_path):
-    
+
     res1d_file_dfs = read_res1d_files_dataframes_from_xlsx(xlsx_file_path)
     element_collections_dfs = read_element_collections_dataframes_from_xlsx(xlsx_file_path)
     output_files_dfs = read_output_files_dataframes_from_xlsx(xlsx_file_path)
-    
-    return [res1d_file_dfs, element_collections_dfs, output_files_dfs]
+
+    return [res1d_file_dfs, element_collections_dfs, output_files_dfs, []]
     
 
 def main():

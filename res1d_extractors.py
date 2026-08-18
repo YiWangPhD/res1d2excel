@@ -7,8 +7,10 @@
 
 import element_collection
 import pandas as pd
+import combined_element
 import res1d_network
 import res1d_runoff
+
 
 def batch_res1d_extractor(
         res1d_dict,
@@ -149,11 +151,32 @@ def res1d_extractor(short_name, res1d, elem_collection_list):
 
     """
     for elem_collection in elem_collection_list:
+        if is_calculated_collection(elem_collection):
+            continue
         print(f'Extracting {elem_collection.get_element_type()} data ...')
         dfs = extract_element_ts(res1d, elem_collection)
         if dfs is not None:
             elem_collection.add_ts(dfs, short_name)
             elem_collection.update_statistics()
+
+
+def is_calculated_collection(elem_collection):
+    if not isinstance(elem_collection,
+                      element_collection.ElementCollection):
+        return False
+    return combined_element.CALCULATED_DISCHARGE in elem_collection.get_quantity_ids()
+
+
+def update_combined_element_collections(elem_collection_list):
+    """
+    Update calculated element collections after native res1d extraction.
+    """
+    for elem_collection in elem_collection_list:
+        if not is_calculated_collection(elem_collection):
+            continue
+        print(f'Updating {elem_collection.get_element_type()} data ...')
+        elem_collection.update_ts()
+        elem_collection.update_statistics()
 
 
 def extract_element_ts(res1d, elem_collection):
@@ -173,8 +196,10 @@ def extract_element_ts(res1d, elem_collection):
         DESCRIPTION.
 
     """
-    if not isinstance(elem_collection, 
+    if not isinstance(elem_collection,
                       element_collection.ElementCollection):
+        return None
+    if is_calculated_collection(elem_collection):
         return None
     element_type = elem_collection.get_element_type()
     quantity_ids = elem_collection.get_quantity_ids()
