@@ -39,6 +39,9 @@ support combined elements in JSON input
 v1.2.5 - 2026-8-17
 support combined elements in xlsx input
 
+v1.2.6 - 2026-8-18
+support river model results
+
 to do list:
     extract multiple time periods from the same res1d file
     export to html and pdf
