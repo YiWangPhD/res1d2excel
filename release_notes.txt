@@ -39,6 +39,12 @@ support combined elements in JSON input
 v1.2.5 - 2026-8-17
 support combined elements in xlsx input
 
+v1.3.0 - 2026-8-19
+redesigned network indexing to support mixed sewer and river model results
+added river structure extraction for weirs, gates, bridges, and direct discharges
+added xlsx, json, and browser editor input support for new river structure types
+improved empty-output reporting and resample interval parsing
+
 to do list:
     extract multiple time periods from the same res1d file
     export to html and pdf

@@ -17,7 +17,7 @@ Instructions:
 	
 3. In res1d2excel_template.xlsx file:
 
-3.1 List element MUIDs under corresponding sheets: node, link, orifice, pump, regulation, weir, and valve (catchment added in version v1.1.0)
+3.1 List element MUIDs under corresponding sheets: catchment, node, link, orifice, pump, regulation, weir, valve, bridge, direct_discharge, and gate.
 
 3.2 In each row, put "alias" in first cell, "quantity" in 2nd cell, MUID in 3rd cell, and chainage in 4th for links and regulations. 
 	Chainages are default to zero. Inaccurate chainages will be moved to the closest one.
