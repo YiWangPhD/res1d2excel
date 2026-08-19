@@ -11,6 +11,23 @@ import element_collection
 
 COMBINED_QUANTITY = "CalculatedDischarge"
 
+RESAMPLE_UNIT_ALIASES = {
+    "d": "D",
+    "day": "D",
+    "days": "D",
+    "h": "h",
+    "hr": "h",
+    "hour": "h",
+    "hours": "h",
+    "min": "min",
+    "minute": "min",
+    "minutes": "min",
+    "s": "s",
+    "sec": "s",
+    "second": "s",
+    "seconds": "s",
+}
+
 
 # create dataframe templates
 def create_element_collections_dataframes_template():
@@ -247,6 +264,8 @@ def create_excel_collection_from_dataframes(dfs):
         
     if resample_t == 0:
         resample_t = None
+    else:
+        resample_t = normalize_resample_interval(resample_t)
 
     if skip_time == 0:
         skip_time = None
@@ -262,6 +281,35 @@ def create_excel_collection_from_dataframes(dfs):
     xlsx_dict['trunc_time'] = trunc_time
     
     return xlsx_dict
+
+
+def normalize_resample_interval(value):
+    """
+    Convert human-readable durations to pandas resample frequency aliases.
+
+    pandas.Timedelta accepts strings like "5 minute", but DataFrame.resample()
+    requires offset aliases like "5min".
+    """
+    if value is None or pd.isna(value):
+        return None
+
+    if not isinstance(value, str):
+        return value
+
+    text = value.strip()
+    if not text:
+        return None
+
+    parts = text.split()
+    if len(parts) != 2:
+        return text
+
+    amount, unit = parts
+    unit_alias = RESAMPLE_UNIT_ALIASES.get(unit.lower())
+    if unit_alias is None:
+        return text
+
+    return f"{amount}{unit_alias}"
 
 
 def create_res1d_collections_from_dataframes(dfs):
