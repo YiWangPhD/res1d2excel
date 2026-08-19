@@ -17,7 +17,7 @@ Instructions:
 	
 3. In res1d2excel_template.xlsx file:
 
-3.1 List element MUIDs under corresponding sheets: node, link, orifice, pump, regulation, weir, and valve (catchment added in version v1.1.0)
+3.1 List element MUIDs under corresponding sheets: node, link, orifice, pump, regulation, weir, valve, bridge, direct_discharge, and gate (catchment added in version v1.1.0)
 
 3.2 In each row, put "alias" in first cell, "quantity" in 2nd cell, MUID in 3rd cell, and chainage in 4th for links and regulations. 
 	Chainages are default to zero. Inaccurate chainages will be moved to the closest one.
@@ -84,6 +84,15 @@ Instructions:
 			CrestLevel, ControlStrategyId, 
 			DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
 			FlowAreaInStructure, FlowVelocityInStructure
+
+	Bridges: DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive,
+			ControlStrategyId, FlowAreaInStructure, FlowVelocityInStructure
+
+	Direct Discharges: DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive,
+			ControlStrategyId
+
+	Gates: 	DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive,
+			ControlStrategyId, FlowAreaInStructure, FlowVelocityInStructure
  
 6. possible quantities for advection-dispersion simulations: (following examples are based on a pollutant named "sewage". replace with your pollutant)
 	

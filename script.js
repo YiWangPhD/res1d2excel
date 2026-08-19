@@ -8,6 +8,9 @@ const data = {
     regulation: [],
     weir: [],
     valve: [],
+    bridge: [],
+    direct_discharge: [],
+    gate: [],
     combined: [],
     output_files: {
         output_folder: "",
@@ -33,9 +36,17 @@ const defaultSchemas = {
     regulation: ["alias", "quantity", "muid", "chainage"],
     weir: ["alias", "quantity", "muid"],
     valve: ["alias", "quantity", "muid"],
+    bridge: ["alias", "quantity", "muid"],
+    direct_discharge: ["alias", "quantity", "muid"],
+    gate: ["alias", "quantity", "muid"],
     res1d_files: ["result_type", "short_name", "file_path"],
     combined: ["alias", "quantity", "terms"]
 };
+
+const combinedSources = [
+    "catchment", "node", "link", "orifice", "pump", "regulation",
+    "weir", "valve", "bridge", "direct_discharge", "gate"
+];
 
 let currentTab = "";
 let selectedRowIndex = -1;
@@ -459,7 +470,7 @@ function renderTerms(index) {
 
                 <!-- SOURCE -->
                 <select onchange="changeTermSource(${index},${i},this.value)">
-                    ${["catchment","node","link","orifice","pump","regulation","weir","valve"]
+                    ${combinedSources
                         .map(s => `<option value="${s}" ${t.source===s?"selected":""}>${s}</option>`)
                         .join("")}
                 </select>
@@ -766,6 +777,12 @@ function loadJSON() {
             }
         });
 
+        ["bridge", "direct_discharge", "gate"].forEach(key => {
+            if (!Array.isArray(data[key])) {
+                data[key] = [];
+            }
+        });
+
         // ✅ Ensure combined exists
         if (!Array.isArray(data.combined)) {
             data.combined = [];
@@ -832,8 +849,8 @@ function switchTab(name) {
     document.getElementById("tab-" + name).classList.add("active");
 
     if (name === "output_files") renderOutputFiles();
-    else if (name !== "JSON" && name !== "Instructions") renderTab(name);
     else if (name === "combined") renderCombined();
+    else if (name !== "JSON" && name !== "Instructions") renderTab(name);
 
 }
 
@@ -865,7 +882,7 @@ ${section("2. Run with JSON Input", `
 
 ${section("3. How to Use This Webpage", `
 <h4>3.1 Element Tabs</h4>
-<p>Use tabs: catchment, node, link, orifice, pump, regulation, weir, valve</p>
+<p>Use tabs: catchment, node, link, orifice, pump, regulation, weir, valve, bridge, direct_discharge, gate</p>
 
 <h4>3.2 Data Entry Rules</h4>
 <ul>

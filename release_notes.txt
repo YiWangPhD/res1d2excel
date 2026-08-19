@@ -42,6 +42,9 @@ support combined elements in xlsx input
 v1.2.6 - 2026-8-18
 support river model results
 
+v1.2.7 - 2026-8-19
+updated I/o for river structures
+
 to do list:
     extract multiple time periods from the same res1d file
     export to html and pdf
