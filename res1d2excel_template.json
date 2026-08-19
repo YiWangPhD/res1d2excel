@@ -220,7 +220,7 @@
   ],
   "weir": [
     {
-      "alias": "Weir_to WWTP_Discharge",
+      "alias": "Weir_to_WWTP_Discharge",
       "quantity": "Discharge",
       "muid": "Weir_to WWTP"
     },
@@ -230,7 +230,7 @@
       "muid": "Weir_to_river"
     },
     {
-      "alias": "Weir_to WWTP_CrestLevel",
+      "alias": "Weir_to_WWTP_CrestLevel",
       "quantity": "CrestLevel",
       "muid": "Weir_to WWTP"
     },
@@ -251,6 +251,27 @@
     }
   ],
   "valve": [],
+  "bridge": [
+    {
+      "alias": "Spur_4_Bridge_Discharge",
+      "quantity": "DischargeInStructure",
+      "muid": "Spur-4 Bridge"
+    }
+  ],
+  "direct_discharge": [
+    {
+      "alias": "Lower_Outlet_East_Discharge",
+      "quantity": "DischargeInStructure",
+      "muid": "Lower Outlet East"
+    }
+  ],
+  "gate": [
+    {
+      "alias": "Fish_Valve_June_15_ControlStrategyId",
+      "quantity": "ControlStrategyId",
+      "muid": "Fish_Valve_June_15"
+    }
+  ],
   "res1d_files": [
     {
       "result_type": "network",
@@ -296,6 +317,11 @@
           "op": "-",
           "source": "pump",
           "alias": "Pump_1_to_WWTP_Discharge"
+        },
+        {
+          "op": "+",
+          "source": "direct_discharge",
+          "alias": "Lower_Outlet_East_Discharge"
         }
       ]
     }

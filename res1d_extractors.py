@@ -230,6 +230,13 @@ def extract_element_ts(res1d, elem_collection):
                 dfs = res1d.get_weir_data_frames(element_ids, quantity_ids)
             case 'valve':
                 dfs = res1d.get_valve_data_frames(element_ids, quantity_ids)
+            case 'bridge':
+                dfs = res1d.get_bridge_data_frames(element_ids, quantity_ids)
+            case 'direct_discharge':
+                dfs = res1d.get_direct_discharge_data_frames(
+                    element_ids, quantity_ids)
+            case 'gate':
+                dfs = res1d.get_gate_data_frames(element_ids, quantity_ids)
     
     if isinstance(res1d, res1d_runoff.Res1DRunoff):
         dfs = res1d.get_catchment_data_frames(element_ids, quantity_ids)

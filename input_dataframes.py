@@ -11,6 +11,23 @@ import element_collection
 
 COMBINED_QUANTITY = "CalculatedDischarge"
 
+RESAMPLE_UNIT_ALIASES = {
+    "d": "D",
+    "day": "D",
+    "days": "D",
+    "h": "h",
+    "hr": "h",
+    "hour": "h",
+    "hours": "h",
+    "min": "min",
+    "minute": "min",
+    "minutes": "min",
+    "s": "s",
+    "sec": "s",
+    "second": "s",
+    "seconds": "s",
+}
+
 
 # create dataframe templates
 def create_element_collections_dataframes_template():
@@ -75,8 +92,8 @@ def create_element_collections_dataframes_template():
         'chainage': [None, None, None]
         })    
     dfs['weir'] = pd.DataFrame({
-        'alias': ['Weir_to WWTP_Discharge', 'Weir_to_river_Discharge', 
-                  'Weir_to WWTP_CrestLevel', None, None, None],
+        'alias': ['Weir_to_WWTP_Discharge', 'Weir_to_river_Discharge',
+                  'Weir_to_WWTP_CrestLevel', None, None, None],
         'quantity': ['Discharge', 'Discharge', 
                      'CrestLevel', 'CrestLevel', 
                      'ControlStrategyId', 'ControlStrategyId'],
@@ -88,6 +105,21 @@ def create_element_collections_dataframes_template():
         'alias': [],
         'quantity': [],
         'muid': []
+        })
+    dfs['bridge'] = pd.DataFrame({
+        'alias': ['Spur_4_Bridge_Discharge'],
+        'quantity': ['DischargeInStructure'],
+        'muid': ['Spur-4 Bridge']
+        })
+    dfs['direct_discharge'] = pd.DataFrame({
+        'alias': ['Lower_Outlet_East_Discharge'],
+        'quantity': ['DischargeInStructure'],
+        'muid': ['Lower Outlet East']
+        })
+    dfs['gate'] = pd.DataFrame({
+        'alias': ['Fish_Valve_June_15_ControlStrategyId'],
+        'quantity': ['ControlStrategyId'],
+        'muid': ['Fish_Valve_June_15']
         })
     return dfs
 
@@ -123,15 +155,19 @@ def create_res1d_files_dataframe_template():
 
 def create_combined_dataframe_template():
     combined_df = pd.DataFrame({
-        'combined_alias': ['Combined1', 'Combined1', 'Combined1', 'Combined1'],
+        'combined_alias': ['Combined1', 'Combined1', 'Combined1', 'Combined1',
+                           'Combined1'],
         'quantity': [COMBINED_QUANTITY, COMBINED_QUANTITY,
-                     COMBINED_QUANTITY, COMBINED_QUANTITY],
-        'op': ['+', '-', '+', '-'],
-        'source': ['link', 'orifice', 'catchment', 'pump'],
+                     COMBINED_QUANTITY, COMBINED_QUANTITY,
+                     COMBINED_QUANTITY],
+        'op': ['+', '-', '+', '-', '+'],
+        'source': ['link', 'orifice', 'catchment', 'pump',
+                   'direct_discharge'],
         'source_alias': ['C15152001.2_Discharge',
                          'Orifice_6_Discharge',
                          'S15155401_TotalRunOff',
-                         'Pump_1_to_WWTP_Discharge']
+                         'Pump_1_to_WWTP_Discharge',
+                         'Lower_Outlet_East_Discharge']
         })
     return {'combined': combined_df}
 
@@ -228,6 +264,8 @@ def create_excel_collection_from_dataframes(dfs):
         
     if resample_t == 0:
         resample_t = None
+    else:
+        resample_t = normalize_resample_interval(resample_t)
 
     if skip_time == 0:
         skip_time = None
@@ -243,6 +281,32 @@ def create_excel_collection_from_dataframes(dfs):
     xlsx_dict['trunc_time'] = trunc_time
     
     return xlsx_dict
+
+
+def normalize_resample_interval(value):
+    """
+    Convert human-readable durations to pandas resample frequency aliases.
+    """
+    if value is None or pd.isna(value):
+        return None
+
+    if not isinstance(value, str):
+        return value
+
+    text = value.strip()
+    if not text:
+        return None
+
+    parts = text.split()
+    if len(parts) != 2:
+        return text
+
+    amount, unit = parts
+    unit_alias = RESAMPLE_UNIT_ALIASES.get(unit.lower())
+    if unit_alias is None:
+        return text
+
+    return f"{amount}{unit_alias}"
 
 
 def create_res1d_collections_from_dataframes(dfs):

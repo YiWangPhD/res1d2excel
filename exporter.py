@@ -8,6 +8,7 @@
 # it extracts statistics (one dataframe per stat)
 
 import pandas as pd
+import warnings
 
 def dataframe_by_element(elem_collection_list):
     """
@@ -31,7 +32,11 @@ def dataframe_by_element(elem_collection_list):
             key = elem.get_element_alias()
             if key is None:
                 key = elem.get_element_string()
-            dfs[key] = elem.get_ts_dataframe()
+            df = elem.get_ts_dataframe()
+            if df.empty or df.shape[1] == 0:
+                warnings.warn(f"Skipped {key}: no data")
+                continue
+            dfs[key] = df
     
     return dfs
 
@@ -109,8 +114,7 @@ def dataframes_stats(elem_collection_list):
                 if elem_str not in dfs2[stat_name]:
                     dfs2[stat_name][elem_str] = {}
                 dfs2[stat_name][elem_str][tag] = stat
-    
+
     dfs = {stat_name: pd.DataFrame(stat_dict).transpose() for stat_name, stat_dict in dfs2.items()}
-    
+
     return dfs
-    

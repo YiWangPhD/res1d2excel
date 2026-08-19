@@ -7,6 +7,14 @@ import pandas as pd
 import numpy as np
 import input_dataframes
 
+
+ELEMENT_SHEETS = [
+    'catchment', 'node', 'link', 'orifice', 'pump', 'regulation',
+    'weir', 'valve', 'bridge', 'direct_discharge', 'gate'
+]
+
+OPTIONAL_ELEMENT_SHEETS = ['bridge', 'direct_discharge', 'gate']
+
 # dataframe <==> xlsx
 # write dataframe templates to spreadsheets:
     
@@ -26,12 +34,26 @@ def create_template_xlsx(xlsx_file_path):
 
 # read dataframes from spreadsheets
 def read_element_collections_dataframes_from_xlsx(xlsx_file_path):
-    dfs = pd.read_excel(xlsx_file_path, 
-                        sheet_name = ['catchment', 'node', 'link', 'orifice', 'pump', 'regulation', 'weir', 'valve'],
-                        dtype = {'alias': object, 
-                                 'quantity': object, 
-                                 'muid': object,
-                                 'chainage': np.float64})
+    dfs = {}
+    with pd.ExcelFile(xlsx_file_path) as workbook:
+        for sheet_name in ELEMENT_SHEETS:
+            if sheet_name not in workbook.sheet_names:
+                if sheet_name in OPTIONAL_ELEMENT_SHEETS:
+                    dfs[sheet_name] = pd.DataFrame({
+                        'alias': [],
+                        'quantity': [],
+                        'muid': []
+                    })
+                    continue
+                raise ValueError(f"Worksheet named '{sheet_name}' not found")
+
+            dfs[sheet_name] = pd.read_excel(
+                            workbook,
+                            sheet_name=sheet_name,
+                            dtype = {'alias': object,
+                                     'quantity': object,
+                                     'muid': object,
+                                     'chainage': np.float64})
     return dfs
 
 
