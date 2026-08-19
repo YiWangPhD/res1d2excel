@@ -7,9 +7,16 @@
 import res1d
 import utilities
 import pandas as pd
-import numpy as np
 import re
 from dataclasses import dataclass, field
+
+
+@dataclass
+class StructureDataRef:
+    data_item: object
+    element_index: int | None = None
+    gridpoint_index: int | None = None
+    chainage: float | None = None
 
 
 @dataclass
@@ -22,7 +29,8 @@ class StructureRef:
     gridpoint_index: int | None = None
     source_kind: str = ""
     raw_type_text: str | None = None
-    data_items_by_quantity: dict[str, object] = field(default_factory=dict)
+    data_items_by_quantity: dict[str, StructureDataRef] = field(
+        default_factory=dict)
 
 class Res1DNetwork(res1d.Res1D):
     
@@ -264,23 +272,30 @@ class Res1DNetwork(res1d.Res1D):
             self, structure_id, structure_type, reach_index, reach,
             source_kind, initial_data_item=None, raw_type_text=None):
         structure_type = self._normalize_structure_type(structure_type)
-        gridpoint_index, chainage = self._get_data_item_gridpoint_info(
-            reach, initial_data_item)
+        initial_data_ref = None
+        if initial_data_item is not None:
+            initial_data_ref = self._create_structure_data_ref(
+                reach, initial_data_item, 0)
         ref = StructureRef(
             structure_id=structure_id,
             structure_type=structure_type,
             reach_index=reach_index,
             reach_name=reach.Id,
-            chainage=chainage,
-            gridpoint_index=gridpoint_index,
+            chainage=(
+                None if initial_data_ref is None
+                else initial_data_ref.chainage),
+            gridpoint_index=(
+                None if initial_data_ref is None
+                else initial_data_ref.gridpoint_index),
             source_kind=source_kind,
             raw_type_text=raw_type_text)
         if initial_data_item is None:
             for data_item in reach.DataItems:
-                ref.data_items_by_quantity[data_item.Quantity.Id] = data_item
+                ref.data_items_by_quantity[
+                    data_item.Quantity.Id] = StructureDataRef(data_item)
         else:
             ref.data_items_by_quantity[
-                initial_data_item.Quantity.Id] = initial_data_item
+                initial_data_item.Quantity.Id] = initial_data_ref
         return ref
 
 
@@ -300,13 +315,28 @@ class Res1DNetwork(res1d.Res1D):
             structure_IDs[ref.structure_type][ref.structure_id] = ref
 
 
-    def _get_data_item_gridpoint_info(self, reach, data_item):
+    def _create_structure_data_ref(self, reach, data_item, element_index=None):
+        gridpoint_index, chainage = self._get_data_item_gridpoint_info(
+            reach, data_item, element_index)
+        return StructureDataRef(
+            data_item=data_item,
+            element_index=element_index,
+            gridpoint_index=gridpoint_index,
+            chainage=chainage)
+
+
+    def _get_data_item_gridpoint_info(
+            self, reach, data_item, element_index=None):
         if data_item is None or data_item.IndexList is None:
             return None, None
         index_list = list(data_item.IndexList)
         if not index_list:
             return None, None
-        gridpoint_index = index_list[0]
+        if element_index is None:
+            element_index = 0
+        if element_index >= len(index_list):
+            return None, None
+        gridpoint_index = index_list[element_index]
         gridpoints = list(reach.GridPoints)
         if gridpoint_index >= len(gridpoints):
             return gridpoint_index, None
@@ -387,35 +417,19 @@ class Res1DNetwork(res1d.Res1D):
                     name, ref, data_item)
                 df_elem[quantity_ID].append(d)
 
-        for df in df_elem:
-            if len(df_elem[df]) > 0:
-                df_elem[df] = pd.concat(df_elem[df], axis=1)
-                if df_elem[df].size > 0:
-                    df_elem[df] = df_elem[df].iloc[self.time_stamp_indices]
-                    df_elem[df].index = self.df_time_stamps
-            else:
-                df_elem[df] = pd.DataFrame(index=self.df_time_stamps)
-        return df_elem
+        return self._finalize_quantity_frames(df_elem)
 
 
-    def _structure_data_item_to_frame(self, name, ref, data_item):
-        data = np.asarray(data_item.CreateDataArray())
-        d = pd.DataFrame(data)
-        if d.shape[1] == 1:
-            d.columns = [name]
-            return d
-
-        chainages = self._get_structure_data_item_chainages(ref, data_item)
-        if len(chainages) == d.shape[1]:
-            d.columns = pd.MultiIndex.from_tuples(
-                [(name, chainage) for chainage in chainages])
-            d.columns = d.columns.set_names(['muid', 'chainage'])
-            return d
-
-        d.columns = pd.MultiIndex.from_tuples(
-            [(name, i) for i in range(d.shape[1])])
-        d.columns = d.columns.set_names(['muid', 'chainage'])
-        return d
+    def _structure_data_item_to_frame(self, name, ref, data_ref):
+        chainages = None
+        if data_ref.element_index is None:
+            chainages = self._get_structure_data_item_chainages(
+                ref, data_ref.data_item)
+        return self._data_item_to_frame(
+            name,
+            data_ref.data_item,
+            chainages=chainages,
+            element_index=data_ref.element_index)
 
 
     def _get_structure_data_item_chainages(self, ref, data_item):
@@ -714,8 +728,10 @@ class Res1DNetwork(res1d.Res1D):
         df = self.get_node_data_frames(extraction_IDs, ['WaterSpillDischarge'])
         dfs.append(df['WaterSpillDischarge'])
         
-        df = self.get_structure_data_frames(extraction_IDs, ['Discharge'])
+        df = self.get_structure_data_frames(
+            extraction_IDs, ['Discharge', 'DischargeInStructure'])
         dfs.append(df['Discharge'])
+        dfs.append(df['DischargeInStructure'])
         
         df = self.get_reach_data_frames(extraction_IDs, ['Discharge'])
         dfs.append(df['Discharge'])

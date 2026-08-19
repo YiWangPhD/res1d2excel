@@ -184,28 +184,97 @@ class Res1D:
             for di in elem.DataItems:
                 quantity_ID = di.Quantity.Id
                 if quantity_ID in quantity_IDs:
-                    d = pd.DataFrame(np.asarray(di.CreateDataArray()))
-                    if d.shape[1] > 1:
-                        # d.columns = [f"{name} {col}" for col in d.columns]
-                        chainages = [gp.get_Chainage() for gp in elem.get_GridPoints()]
-                        if d.shape[1] * 2 == len(chainages) + 3:
-                            # number of columns is all Q points plus 1st and last H points, e.g. AD
-                            # d.columns = [f"{name} {chainage}" for chainage in [chainages[0], *chainages[1::2], chainages[-1]]]
-                            d.columns = pd.MultiIndex.from_tuples([(name, chainage) for chainage in [chainages[0], *chainages[1::2], chainages[-1]]])
-                        elif d.shape[1] * 2 == len(chainages) + 1:
-                            # number of columns more than half of chainages, e.g. H points only
-                            # d.columns = [f"{name} {chainage}" for chainage in chainages[0::2]]
-                            d.columns = pd.MultiIndex.from_tuples([(name, chainage) for chainage in chainages[0::2]])
-                        elif d.shape[1] * 2 == len(chainages) - 1:
-                            # number of columns less than half of chainages, e.g. Q points only
-                            # d.columns = [f"{name} {chainage}" for chainage in chainages[1::2]]
-                            d.columns = pd.MultiIndex.from_tuples([(name, chainage) for chainage in chainages[1::2]])
-                        else:
-                            raise Exception(f"At Reach {name}, we cannot match chainages with data items. There are {d.shape[1]} columns and {len(chainages)} chainages")
-                        d.columns = d.columns.set_names(['muid', 'chainage'])
-                    else:
-                        d.columns = [name]
+                    data = self._get_data_item_array(di)
+                    column_count = self._get_data_column_count(data)
+                    chainages = None
+                    if column_count > 1:
+                        chainages = self._get_element_chainages(
+                            elem, column_count, name)
+                    d = self._data_array_to_frame(
+                        name, data, chainages, strict_chainages=True)
                     df_elem[quantity_ID].append(d)
+        return self._finalize_quantity_frames(df_elem)
+
+
+    def _get_data_item_array(self, data_item, element_index=None):
+        """
+        Get a numpy-compatible time-series array from a res1d data item.
+
+        element_index is used for river structure data items where one data
+        item can represent a single nested result within a regular reach.
+        """
+        if element_index is not None:
+            try:
+                data = data_item.CreateTimeSeriesData(element_index)
+                data = np.asarray(data)
+                if data.ndim > 0:
+                    return data
+            except Exception:
+                pass
+        data = np.asarray(data_item.CreateDataArray())
+        if element_index is not None and data.ndim > 1:
+            return data[:, element_index]
+        return data
+
+
+    def _get_data_column_count(self, data):
+        data = np.asarray(data)
+        if data.ndim <= 1:
+            return 1
+        return data.shape[1]
+
+
+    def _get_element_chainages(self, elem, column_count, element_name):
+        chainages = [gp.get_Chainage() for gp in elem.get_GridPoints()]
+        if column_count * 2 == len(chainages) + 3:
+            # all Q points plus first and last H points, e.g. AD
+            return [chainages[0], *chainages[1::2], chainages[-1]]
+        if column_count * 2 == len(chainages) + 1:
+            # H points only
+            return chainages[0::2]
+        if column_count * 2 == len(chainages) - 1:
+            # Q points only
+            return chainages[1::2]
+        raise Exception(
+            f"At Reach {element_name}, we cannot match chainages with data "
+            f"items. There are {column_count} columns and "
+            f"{len(chainages)} chainages")
+
+
+    def _data_array_to_frame(
+            self, name, data, chainages=None, strict_chainages=False):
+        data = np.asarray(data)
+        if data.ndim == 1:
+            data = data.reshape(-1, 1)
+        d = pd.DataFrame(data)
+        if d.shape[1] == 1:
+            d.columns = [name]
+            return d
+
+        if chainages is None or len(chainages) != d.shape[1]:
+            if strict_chainages:
+                chainage_count = 0 if chainages is None else len(chainages)
+                raise Exception(
+                    f"At {name}, we cannot match chainages with data items. "
+                    f"There are {d.shape[1]} columns and "
+                    f"{chainage_count} chainages")
+            chainages = range(d.shape[1])
+
+        d.columns = pd.MultiIndex.from_tuples(
+            [(name, chainage) for chainage in chainages])
+        d.columns = d.columns.set_names(['muid', 'chainage'])
+        return d
+
+
+    def _data_item_to_frame(
+            self, name, data_item, chainages=None, element_index=None,
+            strict_chainages=False):
+        data = self._get_data_item_array(data_item, element_index)
+        return self._data_array_to_frame(
+            name, data, chainages, strict_chainages)
+
+
+    def _finalize_quantity_frames(self, df_elem):
         for df in df_elem:
             if len(df_elem[df]) > 0:
                 df_elem[df] = pd.concat(df_elem[df], axis = 1)
