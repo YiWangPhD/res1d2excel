@@ -1,0 +1,55 @@
+{
+  "catchment": [],
+  "node": [],
+  "link": [
+    {
+      "alias": "tributary_discharge",
+      "quantity": "Discharge",
+      "muid": "tributary",
+      "chainage": "275"
+    },
+    {
+      "alias": "river_54300_level",
+      "quantity": "WaterLevel",
+      "muid": "river",
+      "chainage": "54300"
+    }
+  ],
+  "orifice": [],
+  "pump": [],
+  "regulation": [],
+  "weir": [
+    {
+      "alias": "DamCrest_discharge",
+      "quantity": "DischargeInStructure",
+      "muid": "DamCrest"
+    }
+  ],
+  "valve": [],
+  "bridge": [],
+  "direct_discharge": [],
+  "gate": [
+    {
+      "alias": "Outer_Gates_discharge",
+      "quantity": "DischargeInStructure",
+      "muid": "Outer Gates"
+    }
+  ],
+  "combined": [],
+  "output_files": {
+    "output_folder": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel",
+    "resample_interval": "5min",
+    "skip_time": null,
+    "trunc_time": null,
+    "export_by_element": true,
+    "export_by_result_file": true,
+    "export_statistics": true
+  },
+  "res1d_files": [
+    {
+      "result_type": "network",
+      "short_name": "event2",
+      "file_path": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel\\test_data\\test_data\\ControlBaseDefault_Network_HD.res1d"
+    }
+  ]
+}
