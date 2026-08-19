@@ -20,8 +20,8 @@
   "regulation": [],
   "weir": [
     {
-      "alias": "DamCrest_discharge",
-      "quantity": "DischargeInStructure",
+      "alias": "DamCrest_flow_area",
+      "quantity": "FlowAreaInStructure",
       "muid": "DamCrest"
     }
   ],
@@ -30,8 +30,13 @@
   "direct_discharge": [],
   "gate": [
     {
-      "alias": "Outer_Gates_discharge",
-      "quantity": "DischargeInStructure",
+      "alias": "Outer_Gates_flow_velocity",
+      "quantity": "FlowVelocityInStructure",
+      "muid": "Outer Gates"
+    },
+    {
+      "alias": "Outer_Gates_level",
+      "quantity": "GateLevel",
       "muid": "Outer Gates"
     }
   ],
@@ -49,7 +54,7 @@
     {
       "result_type": "network",
       "short_name": "event2",
-      "file_path": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel\\test_data\\test_data\\ControlBaseDefault_Network_HD.res1d"
+      "file_path": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel\\test_data\\ControlBaseDefault_Network_HD.res1d"
     }
   ]
 }

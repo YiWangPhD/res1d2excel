@@ -239,8 +239,10 @@ class Res1DNetwork(res1d.Res1D):
         is_structure_quantity = (
             'InStructure' in quantity_id or
             quantity_id == 'ControlStrategyId' or
+            quantity_id == 'GateLevel' or
             ' in structure:' in description_lower or
-            description_lower.startswith('control strategy id:')
+            description_lower.startswith('control strategy id:') or
+            description_lower.startswith('gate level:')
         )
         return data_item.ItemId is not None and is_structure_quantity
 
