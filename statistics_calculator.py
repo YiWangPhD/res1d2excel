@@ -101,6 +101,14 @@ def integral(s):
     s = integral_block(s)
     return np.nan if s is np.nan else s.sum()
 
+def positive_integral(s):
+    s = s.where(s > 0, 0)
+    return integral(s)
+
+def negative_integral(s):
+    s = s.where(s < 0, 0)
+    return integral(s)
+
 def last_timestep(s):
     return s.iloc[-1]
 
@@ -139,6 +147,8 @@ def get_all_stats(s):
         'min_1H': min_block(s),
         'min_24H': min_block(s, '1D'),
         'integral': integral(s),
+        'positive_integral': positive_integral(s),
+        'negative_integral': negative_integral(s),
         'last_timestep': last_timestep(s),
         'positive_duration': positive_duration(s),
         'negative_duration': negative_duration(s)

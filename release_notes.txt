@@ -45,6 +45,9 @@ added river structure extraction for weirs, gates, bridges, and direct discharge
 added xlsx, json, and browser editor input support for new river structure types
 improved empty-output reporting and resample interval parsing
 
+v1.3.1 - 2026-8-31
+added statistics for sign integrals
+
 to do list:
     extract multiple time periods from the same res1d file
     export to html and pdf

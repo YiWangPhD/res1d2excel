@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Author: Yi Wang
-# version: 1.3.0
+# version: 1.3.1
 # purpos: main function to extract res1d results to excel files
 
 import os
