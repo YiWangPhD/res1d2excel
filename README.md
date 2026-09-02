@@ -26,16 +26,18 @@ Instructions:
 		CA38_Level		WaterLevel	10149	0
 		CA38_Discharge	Discharge	10149	15
 
-3.3 List res1d files in sheet "res1d_files". Make sure the 1st cell is "network", "runoff", or "stats".
+3.3 List result files in sheet "res1d_files". Make sure the 1st cell is "network", "runoff", or "stats".
+	Use "network" for MIKE network result files and EPANET .res, .resx, and .whr files.
 	short names are used as column names or sheet names in output files. 
 	DO NOT duplicate short names
+	EPANET .res files require the matching .inp file to be saved beside the result file.
 
 3.4 In "output_files" sheet, you must provide a folder to save output files. Possible output files are:
 	by_elements		by_element.xlsx		time series organized by element types and MUIDs
-	by_file			by_file.xlsx		time series organized by res1d short names
+	by_file			by_file.xlsx		time series organized by result file short names
 	stats			stats.xlsx			statistics such as max, min, total, etc.
 	
-	DO NOT specify stats option if your res1d files are already statistics results. 
+	DO NOT specify stats option if your result files are already statistics results. 
 	
 	You can also specify a resampling time interval using the keyword "resample_t". 
 	Example resample intervals are 1day, 2h, 5min, 30s
@@ -43,9 +45,9 @@ Instructions:
 	see https://pandas.pydata.org/docs/reference/api/pandas.Timedelta.html
 
 	You can specify a skip time using the keyword "skip_time" to remove time series data
-	from the beginning of each res1d file before statistics and outputs are generated.
+	from the beginning of each result file before statistics and outputs are generated.
 	You can specify a truncation time using the keyword "trunc_time" to remove time series data
-	from the end of each res1d file before statistics and outputs are generated.
+	from the end of each result file before statistics and outputs are generated.
 	Example skip and truncation times use the same format as resample_t: 1day, 24h, 30min, 30s
 	
 4. Possible quantities for catchment simulations:
@@ -84,6 +86,19 @@ Instructions:
 			CrestLevel, ControlStrategyId, 
 			DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
 			FlowAreaInStructure, FlowVelocityInStructure
+
+5.1 Possible quantities for EPANET result files:
+
+	Use "network" as result_type for EPANET .res, .resx, and .whr files.
+	For .res files, keep the matching .inp file beside the result file.
+	EPANET pumps and valves can be listed under link. When the .inp file or result quantities identify a pump or valve, they can also be listed under pump or valve.
+
+	Nodes:	Demand, Head, Pressure, WaterQuality, Volume, Volume Percentage
+
+	Links:	Flow, Velocity, HeadlossPer1000Unit, AvgWaterQuality,
+			StatusCode, Setting, ReactorRate, FrictionFactor
+
+	Pumps:	Pump efficiency, Pump energy costs, Pump energy
  
 6. possible quantities for advection-dispersion simulations: (following examples are based on a pollutant named "sewage". replace with your pollutant)
 	

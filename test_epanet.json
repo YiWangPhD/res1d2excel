@@ -1,0 +1,80 @@
+{
+  "catchment": [],
+  "node": [
+    {
+      "alias": "junction_10_pressure",
+      "quantity": "Pressure",
+      "muid": "10"
+    },
+    {
+      "alias": "tank_2_volume",
+      "quantity": "Volume",
+      "muid": "2"
+    }
+  ],
+  "link": [
+    {
+      "alias": "pipe_10_flow",
+      "quantity": "Flow",
+      "muid": "10",
+      "chainage": 0
+    },
+    {
+      "alias": "pump_9_energy_by_link",
+      "quantity": "Pump energy",
+      "muid": "9",
+      "chainage": 0
+    }
+  ],
+  "orifice": [],
+  "pump": [
+    {
+      "alias": "pump_9_energy",
+      "quantity": "Pump energy",
+      "muid": "9"
+    }
+  ],
+  "regulation": [],
+  "weir": [],
+  "valve": [],
+  "bridge": [],
+  "direct_discharge": [],
+  "gate": [],
+  "combined": [
+    {
+      "alias": "epanet_flow_total",
+      "quantity": "CalculatedDischarge",
+      "terms": [
+        {
+          "op": "+",
+          "source": "link",
+          "alias": "pipe_10_flow"
+        }
+      ]
+    }
+  ],
+  "output_files": {
+    "output_folder": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel",
+    "resample_interval": null,
+    "skip_time": null,
+    "trunc_time": null,
+    "by_elements": "epanet_by_element.xlsx",
+    "by_file": "epanet_by_file.xlsx",
+    "stats": "epanet_stats.xlsx",
+    "export_by_element": true,
+    "export_by_result_file": true,
+    "export_statistics": true
+  },
+  "res1d_files": [
+    {
+      "result_type": "network",
+      "short_name": "epanet_res",
+      "file_path": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel\\test_data\\epanet.res"
+    },
+    {
+      "result_type": "network",
+      "short_name": "epanet_resx",
+      "file_path": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel\\test_data\\epanet.resx"
+    }
+  ]
+}

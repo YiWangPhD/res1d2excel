@@ -13,7 +13,7 @@ import input_dataframes
 DISCHARGE_QUANTITIES = ['Discharge', 'DischargeInStructure', 'OverlandFlow',
                         'InterFlow', 'BaseFlow', 'LowerBaseFlow',
                         'InfiltrationToGroundWater', 'TotalInflow',
-                        'TotalOutflow', 'TotalRunOff']
+                        'TotalOutflow', 'TotalRunOff', 'Flow']
 
 
 def load_json_data(json_path):

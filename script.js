@@ -26,6 +26,7 @@ const data = {
 };
 
 const RESULT_TYPES = ["network", "runoff"];
+const RESULT_FILE_EXTENSIONS = [".res1d", ".res", ".resx", ".whr"];
 
 const defaultSchemas = {
     catchment: ["alias", "quantity", "muid"],
@@ -301,13 +302,13 @@ function updateOutputFiles() {
     updateJSONView();
 }
 
-// -------- RES1D TAB --------
+// -------- RESULT FILES TAB --------
 function res1dHTML() {
     return `
         <div id="form-res1d_files"></div>
 
         <button onclick="addRow('res1d_files')">Add Row</button>
-        <button onclick="loadRes1dFolder()">Load .res1d Folder</button>
+        <button onclick="loadRes1dFolder()">Load Result Folder</button>
         <button onclick="exportCSV('res1d_files')">Export CSV</button>
         <input type="file" onchange="importCSV(event,'res1d_files')">
 
@@ -322,8 +323,10 @@ function loadRes1dFolder() {
     input.onchange = () => {
         const files = Array.from(input.files);
 
-        // ✅ filter only .res1d files
-        const res1dFiles = files.filter(f => f.name.toLowerCase().endsWith(".res1d"));
+        // filter supported result files
+        const res1dFiles = files.filter(f =>
+            RESULT_FILE_EXTENSIONS.some(ext => f.name.toLowerCase().endsWith(ext))
+        );
 
         // ✅ reset existing data
         data.res1d_files = [];
@@ -340,7 +343,7 @@ function loadRes1dFolder() {
         renderTab("res1d_files");
         updateJSONView();
 
-        alert(`${res1dFiles.length} .res1d files loaded.`);
+        alert(`${res1dFiles.length} result files loaded.`);
     };
 
     input.click();
@@ -354,7 +357,7 @@ function pickSingleRes1dFile() {
 
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = ".res1d";
+    input.accept = RESULT_FILE_EXTENSIONS.join(",");
 
     input.onchange = () => {
         const file = input.files[0];
@@ -900,9 +903,10 @@ CA38_Level       WaterLevel  10149   0
 CA38_Discharge   Discharge   10149   15
 </pre>
 
-<h4>3.3 res1d Files</h4>
+<h4>3.3 Result Files</h4>
 <ul>
 <li>First column must be: <b>network, runoff, or stats</b></li>
+<li>Use <b>network</b> for MIKE network files and EPANET .res/.resx/.whr files</li>
 <li>Short names must be UNIQUE</li>
 </ul>
 
@@ -915,12 +919,12 @@ DO NOT duplicate short names
 <table class="instruction-table">
 <tr><th>Option</th><th>File</th><th>Description</th></tr>
 <tr><td>by_elements</td><td>by_element.xlsx</td><td>Organized by element</td></tr>
-<tr><td>by_file</td><td>by_file.xlsx</td><td>Organized by res1d file</td></tr>
+<tr><td>by_file</td><td>by_file.xlsx</td><td>Organized by result file</td></tr>
 <tr><td>stats</td><td>stats.xlsx</td><td>Statistics output</td></tr>
 </table>
 
 <div class="warning">
-DO NOT enable stats if res1d files already contain statistics
+DO NOT enable stats if result files already contain statistics
 </div>
 
 <p><b>Resampling examples:</b></p>
@@ -977,6 +981,17 @@ ${section("5. Network Quantities", `
 			<p>FlowAreaInStructure, FlowVelocityInStructure</p>
 			</li>
 </ul>
+`)}
+
+${section("5.1 EPANET Quantities", `
+<p>Use result_type <b>network</b> for EPANET .res, .resx, and .whr files.</p>
+<p>For .res files, keep the matching .inp file beside the result file.</p>
+<ul>
+<li><b>Nodes:</b> Demand, Head, Pressure, WaterQuality, Volume, Volume Percentage</li>
+<li><b>Links:</b> Flow, Velocity, HeadlossPer1000Unit, AvgWaterQuality, StatusCode, Setting, ReactorRate, FrictionFactor</li>
+<li><b>Pumps:</b> Pump efficiency, Pump energy costs, Pump energy</li>
+</ul>
+<p>EPANET pumps and valves can also be listed in the link tab.</p>
 `)}
 
 ${section("6. Advection-Dispersion Quantities", `

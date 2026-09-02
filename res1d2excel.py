@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Author: Yi Wang
-# version: 1.3.1
+# version: 1.4.0
 # purpos: main function to extract res1d results to excel files
 
 import os
@@ -96,7 +96,7 @@ def main():
     print("Finished reading configuration files.")
     
     # extract ts
-    print("Extracting res1d files ...")
+    print("Extracting result files ...")
     res1d_extractors.batch_res1d_extractor(
         res1d_dict,
         element_collections,
@@ -104,7 +104,7 @@ def main():
         xlsx_dict['trunc_time']
         )
     res1d_extractors.update_combined_element_collections(element_collections)
-    print("Finished extracting res1d files. ")
+    print("Finished extracting result files. ")
     
     # # export dataframes
     print("Exporting excel files ...")

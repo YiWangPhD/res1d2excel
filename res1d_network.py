@@ -5,6 +5,7 @@
 # this is the res1d network class module
 
 import re
+from pathlib import Path
 from dataclasses import dataclass, field
 
 import pandas as pd
@@ -53,6 +54,10 @@ class Res1DNetwork(res1d.Res1D):
         'DischargeInStructure', 'CrestLevel', 'ValveOpening',
         'GateLevel', 'ControlStrategyId'
     ]
+    EPANET_EXTENSIONS = {'.res', '.resx', '.whr'}
+    EPANET_PUMP_QUANTITIES = {
+        'Pump energy', 'Pump energy costs', 'Pump efficiency'
+    }
     DEFAULT_STRUCTURE_QUANTITIES = [
         'WaterLevel', 'Discharge', 'DischargeInStructure',
         'ControlStrategyId'
@@ -96,6 +101,9 @@ class Res1DNetwork(res1d.Res1D):
         self.gate_IDs = {}
         self.structure_IDs = {}
         self.unknown_structure_IDs = {}
+        self.file_path = file_path
+        self._is_epanet_result = self._is_epanet_result_file(file_path)
+        self._epanet_link_types = self._get_epanet_link_types(file_path)
 
         self._build_node_index()
         self._build_reach_and_structure_index()
@@ -120,11 +128,18 @@ class Res1DNetwork(res1d.Res1D):
     def _build_reach_and_structure_index(self):
         for k, reach in enumerate(self.result_data.Reaches):
             reach_id = self._reach_id_without_index(reach.Id)
+            reach_ref = self._create_element_ref(
+                reach_id, 'link', 'Reaches', k, reach, 'reach')
+
+            if self._is_epanet_result:
+                self.reach_IDs[reach_id] = reach_ref
+                self._add_epanet_structure_ref(reach_id, k, reach)
+                continue
+
             handled_as_structure = self._add_sewer_structure_ref(
                 reach_id, k, reach)
             if not handled_as_structure:
-                self.reach_IDs[reach_id] = self._create_element_ref(
-                    reach_id, 'link', 'Reaches', k, reach, 'reach')
+                self.reach_IDs[reach_id] = reach_ref
             self._add_river_structure_refs(k, reach)
 
     def _collect_quantity_ids(self):
@@ -157,7 +172,69 @@ class Res1DNetwork(res1d.Res1D):
         return self._get_ref_quantities(element_IDs)
 
     def _reach_id_without_index(self, reach_id):
+        if '-' not in reach_id:
+            return reach_id
         return '-'.join(reach_id.split('-')[:-1])
+
+    def _is_epanet_result_file(self, file_path):
+        return Path(file_path).suffix.lower() in self.EPANET_EXTENSIONS
+
+    def _get_epanet_link_types(self, file_path):
+        if not self._is_epanet_result_file(file_path):
+            return {}
+
+        inp_path = Path(file_path).with_suffix('.inp')
+        if not inp_path.is_file():
+            return {}
+
+        link_types = {}
+        current_section = None
+        section_types = {
+            'PIPES': 'link',
+            'PUMPS': 'pump',
+            'VALVES': 'valve',
+        }
+
+        with inp_path.open('r', encoding='utf-8', errors='ignore') as f:
+            for line in f:
+                line = line.split(';', 1)[0].strip()
+                if not line:
+                    continue
+
+                match = re.match(r'^\[([^\]]+)\]$', line)
+                if match:
+                    current_section = match.group(1).strip().upper()
+                    continue
+
+                link_type = section_types.get(current_section)
+                if link_type is None:
+                    continue
+
+                link_id = line.split()[0]
+                link_types[link_id] = link_type
+
+        return link_types
+
+    def _add_epanet_structure_ref(self, reach_id, reach_index, reach):
+        structure_type = self._get_epanet_structure_type(reach_id, reach)
+        if structure_type is None:
+            return
+
+        ref = self._create_element_ref(
+            reach_id, structure_type, 'Reaches', reach_index, reach,
+            f'epanet_{structure_type}_reach')
+        self._add_structure_ref(ref)
+
+    def _get_epanet_structure_type(self, reach_id, reach):
+        link_type = self._epanet_link_types.get(reach_id)
+        if link_type in {'pump', 'valve'}:
+            return link_type
+
+        quantity_ids = {di.Quantity.Id for di in reach.DataItems}
+        if quantity_ids.intersection(self.EPANET_PUMP_QUANTITIES):
+            return 'pump'
+
+        return None
 
     def _add_sewer_structure_ref(self, reach_id, reach_index, reach):
         has_structure_quantity = any([

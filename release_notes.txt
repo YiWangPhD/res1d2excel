@@ -48,6 +48,13 @@ improved empty-output reporting and resample interval parsing
 v1.3.1 - 2026-8-31
 added statistics for sign integrals
 
+v1.4.0 - 2026-9-1
+added EPANET result support for .res, .resx, and .whr network files
+added EPANET reach naming support and pump/valve classification from .inp files
+added EPANET quantities to README/browser instructions and test_epanet.json
+added EPANET Flow support for combined discharge calculations
+updated user-facing wording from res1d files to result files where appropriate
+
 to do list:
     extract multiple time periods from the same res1d file
     export to html and pdf

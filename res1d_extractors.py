@@ -2,7 +2,7 @@
 # coding: utf-8
 
 # Author: Yi Wang
-# this module extracts time seris from one Res1D class and add to
+# this module extracts time series from one result class and adds them to
 # SimpleElementCollection instances
 
 import element_collection
@@ -19,13 +19,13 @@ def batch_res1d_extractor(
         trunc_time=None
         ):
     """
-    enumerate through res1d file dictionary and extract data according
+    enumerate through result file dictionary and extract data according
     to simple element collection list
     
     Parameters
     ----------
     res1d_dict : dictionary {short_name: file_path}
-        this dictionary holds collection of res1d file paths
+        this dictionary holds collection of result file paths
     elem_collection_list : list of element collections
         list of element collections
     skip_time : str, optional
@@ -42,17 +42,17 @@ def batch_res1d_extractor(
     """
     if 'network' in res1d_dict:
         for short_name, res1d_file_path in res1d_dict['network'].items():
-            print(f'Loading res1d file {res1d_file_path} ...')
+            print(f'Loading result file {res1d_file_path} ...')
             res1d = res1d_network.Res1DNetwork(res1d_file_path)
             apply_time_range(res1d, skip_time, trunc_time)
-            print(f'Extracting data from res1d file {short_name} ...')
+            print(f'Extracting data from result file {short_name} ...')
             res1d_extractor(short_name, res1d, elem_collection_list)
     if 'runoff' in res1d_dict:
         for short_name, res1d_file_path in res1d_dict['runoff'].items():
-            print(f'Loading res1d file {res1d_file_path} ...')
+            print(f'Loading result file {res1d_file_path} ...')
             res1d = res1d_runoff.Res1DRunoff(res1d_file_path)
             apply_time_range(res1d, skip_time, trunc_time)
-            print(f'Extracting data from res1d file {short_name} ...')
+            print(f'Extracting data from result file {short_name} ...')
             res1d_extractor(short_name, res1d, elem_collection_list)
 
 
@@ -139,7 +139,7 @@ def res1d_extractor(short_name, res1d, elem_collection_list):
     Parameters
     ----------
     short_name : String
-        short name for the res1d file, e.g. 50mm, double_pipe, ...
+        short name for the result file, e.g. 50mm, double_pipe, ...
     res1d : Res1DNetwork or Res1DRunoff
         instance of res1d class.
     elem_collection_list : list of element collections
