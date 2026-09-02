@@ -10,7 +10,6 @@ import os
 from typing import Mapping
 
 import pandas as pd
-import plotly
 import utilities_plotly
 
 
@@ -56,7 +55,15 @@ def export_plot_page(
 
         section_id = f"plot-section-{index}"
         options.append((section_id, name))
-        sections.append(_plot_section_html(section_id, name, plot_df))
+        sections.append(
+            _plot_section_html(
+                section_id,
+                name,
+                plot_df,
+                include_plotlyjs=len(sections) == 0,
+                active=len(sections) == 0
+            )
+        )
 
     page = _page_html(title, selector_label, options, sections)
 
@@ -73,17 +80,24 @@ def _prepare_dataframe(df: pd.DataFrame, resample_t: str | None) -> pd.DataFrame
     return plot_df
 
 
-def _plot_section_html(section_id: str, name: str, df: pd.DataFrame) -> str:
+def _plot_section_html(
+        section_id: str,
+        name: str,
+        df: pd.DataFrame,
+        include_plotlyjs: bool,
+        active: bool
+        ) -> str:
     plot_html = utilities_plotly.draw_graph(
         [df],
         to_html=True,
-        include_plotlyjs=False,
+        include_plotlyjs=include_plotlyjs,
         title=str(name)
     )
     escaped_name = html.escape(str(name))
+    section_class = "plot-section active" if active else "plot-section"
 
     return f"""
-        <section id="{section_id}" class="plot-section">
+        <section id="{section_id}" class="{section_class}">
             <h2>{escaped_name}</h2>
             {plot_html}
         </section>
@@ -98,7 +112,6 @@ def _page_html(
         ) -> str:
     escaped_title = html.escape(title)
     escaped_selector_label = html.escape(selector_label)
-    plotly_version = html.escape(plotly.__version__)
 
     if not options:
         options_html = ""
@@ -116,7 +129,6 @@ def _page_html(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{escaped_title}</title>
-    <script src="https://cdn.plot.ly/plotly-{plotly_version}.min.js"></script>
     <style>
         body {{
             margin: 0;
