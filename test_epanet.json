@@ -58,6 +58,7 @@
     "resample_interval": null,
     "skip_time": null,
     "trunc_time": null,
+    "to_html": true,
     "by_elements": "epanet_by_element.xlsx",
     "by_file": "epanet_by_file.xlsx",
     "stats": "epanet_stats.xlsx",

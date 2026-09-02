@@ -10,7 +10,17 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 
-def draw_graph(dfList, yaxisTitle = '', xaxisRange = [], width = None, height = None, to_html = False, to_image = False):
+def draw_graph(
+        dfList,
+        yaxisTitle='',
+        xaxisRange=[],
+        width=None,
+        height=None,
+        to_html=False,
+        to_image=False,
+        include_plotlyjs='cdn',
+        title=''
+        ):
     fig = go.Figure()
     
     for df in dfList:
@@ -25,9 +35,14 @@ def draw_graph(dfList, yaxisTitle = '', xaxisRange = [], width = None, height = 
         fig.update_xaxes(range = xaxisRange)
     if len(yaxisTitle) > 0:
         fig.update_layout(yaxis_title = yaxisTitle)        
+    if len(title) > 0:
+        fig.update_layout(title=title)
     fig.update_layout(margin=dict(l=20, r=20, t=20, b=20))
     if to_html:
-        return fig.to_html(full_html=False, include_plotlyjs='cdn')
+        return fig.to_html(
+            full_html=False,
+            include_plotlyjs=include_plotlyjs
+        )
     elif to_image:
         return fig
     else:
@@ -102,4 +117,3 @@ def main():
 
 if __name__ == '__main__' and '__file__' not in globals():
     main()
-

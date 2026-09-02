@@ -17,6 +17,7 @@ const data = {
         resample_interval: "",
         skip_time: "",
         trunc_time: "",
+        to_html: true,
         export_by_element: false,
         export_by_result_file: false,
         export_statistics: false
@@ -172,6 +173,9 @@ function outputFilesHTML() {
             <option value="second">second</option>
         </select><br>
 
+        <label>Export HTML Plots</label>
+        <input type="checkbox" id="of-html" onchange="updateOutputFiles()"><br>
+
         <label>Export by Element</label>
         <input type="checkbox" id="of-e1" onchange="updateOutputFiles()"><br>
 
@@ -240,6 +244,7 @@ function renderOutputFiles() {
     setDurationControls("of-skip", o.skip_time, "hour");
     setDurationControls("of-trunc", o.trunc_time, "hour");
 
+    document.getElementById("of-html").checked = o.to_html || false;
     document.getElementById("of-e1").checked = o.export_by_element || false;
     document.getElementById("of-e2").checked = o.export_by_result_file || false;
     document.getElementById("of-e3").checked = o.export_statistics || false;
@@ -293,6 +298,7 @@ function updateOutputFiles() {
         resample_interval: resample,
         skip_time: skipTime,
         trunc_time: truncTime,
+        to_html: document.getElementById("of-html").checked,
 
         export_by_element: document.getElementById("of-e1").checked,
         export_by_result_file: document.getElementById("of-e2").checked,
@@ -555,6 +561,15 @@ function validateCombined() {
     });
 }
 
+function parseBoolean(value) {
+    if (typeof value === "boolean") return value;
+    if (value === null || value === undefined) return false;
+    if (typeof value === "string") {
+        return ["true", "yes", "y", "1"].includes(value.trim().toLowerCase());
+    }
+    return Boolean(value);
+}
+
 function getAvailableAliases(source) {
     if (!data[source]) return [];
 
@@ -790,6 +805,8 @@ function loadJSON() {
         if (!Array.isArray(data.combined)) {
             data.combined = [];
         }
+
+        data.output_files.to_html = parseBoolean(data.output_files.to_html);
 
         // ✅ Normalize combined structure
         data.combined.forEach(item => {

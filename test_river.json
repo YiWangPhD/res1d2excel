@@ -46,6 +46,7 @@
     "resample_interval": "5min",
     "skip_time": null,
     "trunc_time": null,
+    "to_html": true,
     "export_by_element": true,
     "export_by_result_file": true,
     "export_statistics": true

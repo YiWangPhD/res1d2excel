@@ -142,6 +142,7 @@ def _output_files_dataframe_to_json(output_files_df):
         "resample_interval": output_files.get("resample_t"),
         "skip_time": output_files.get("skip_time"),
         "trunc_time": output_files.get("trunc_time"),
+        "to_html": input_dataframes.parse_bool(output_files.get("to_html", False)),
         "export_by_element": "by_elements" in output_files,
         "export_by_result_file": "by_file" in output_files,
         "export_statistics": "stats" in output_files,
@@ -175,6 +176,11 @@ def _output_files_json_to_dataframe(output_files):
     trunc_time = output_files.get("trunc_time")
     if trunc_time:
         rows.append({"type": "trunc_time", "value": trunc_time})
+
+    rows.append({
+        "type": "to_html",
+        "value": input_dataframes.parse_bool(output_files.get("to_html", False))
+    })
 
     if output_files.get("by_elements"):
         rows.append({"type": "by_elements", "value": output_files["by_elements"]})

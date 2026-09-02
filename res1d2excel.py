@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Author: Yi Wang
-# version: 1.4.0
+# version: 1.4.1
 # purpos: main function to extract res1d results to excel files
 
 import os
@@ -11,6 +11,7 @@ import input_json
 import res1d_extractors
 import exporter
 import exporter_xlsx
+import exporter_html
 import element_collection
 import pickle
 from typing import Any, List
@@ -77,6 +78,33 @@ def export_results(
             if export_pickles:
                 pickle_file_path = xlsx_file_path.replace('.xlsx', '.pkl')
                 pickle.dump(dfs, open(pickle_file_path, 'wb'))
+
+    if xlsx_dict['to_html']:
+        output_folder = xlsx_dict['output_folder']
+
+        print(os.linesep + 'Exporting HTML plots by element ...')
+        dfs = exporter.dataframe_by_element(element_collections)
+        html_file_path = os.path.join(output_folder, 'plots_by_element.html')
+        exporter_html.export_plot_page(
+            dfs,
+            html_file_path,
+            'Plots by Element',
+            'Element',
+            resample_t
+        )
+        print(f'HTML plots exported to file: {html_file_path}')
+
+        print(os.linesep + 'Exporting HTML plots by file ...')
+        dfs = exporter.dataframe_by_file(element_collections)
+        html_file_path = os.path.join(output_folder, 'plots_by_file.html')
+        exporter_html.export_plot_page(
+            dfs,
+            html_file_path,
+            'Plots by File',
+            'File',
+            resample_t
+        )
+        print(f'HTML plots exported to file: {html_file_path}')
 
 def main():
     if len(sys.argv) == 1:

@@ -55,9 +55,14 @@ added EPANET quantities to README/browser instructions and test_epanet.json
 added EPANET Flow support for combined discharge calculations
 updated user-facing wording from res1d files to result files where appropriate
 
+v1.4.1 - 2026-9-2
+added optional Plotly HTML plot export from res1d2excel.py using the to_html output setting
+added dropdown filters for exported plots organized by element and by result file
+added to_html support to spreadsheet/json templates, example json files, and browser input editor
+
 to do list:
     extract multiple time periods from the same res1d file
-    export to html and pdf
+    export to pdf
     also show monitored data on html or pdf
     export to pickle or other binery format
     

@@ -14,7 +14,7 @@ Instructions:
 	
 	for example:
 	python res1d2excel.py ".\res1d2excel_template.xlsx"
-	
+
 3. In res1d2excel_template.xlsx file:
 
 3.1 List element MUIDs under corresponding sheets: catchment, node, link, orifice, pump, regulation, weir, valve, bridge, direct_discharge, and gate.
@@ -38,6 +38,10 @@ Instructions:
 	stats			stats.xlsx			statistics such as max, min, total, etc.
 	
 	DO NOT specify stats option if your result files are already statistics results. 
+
+	Use "to_html" with TRUE/FALSE to also export interactive Plotly HTML plot pages.
+	This creates plots_by_element.html and plots_by_file.html in the configured output folder.
+	Each page includes a dropdown filter to choose which element or result file to show.
 	
 	You can also specify a resampling time interval using the keyword "resample_t". 
 	Example resample intervals are 1day, 2h, 5min, 30s
