@@ -26,13 +26,29 @@ dist/res1d2excel-2.1.0-py3-none-any.whl
 
 The wheel contains the `res1d2excel` package and declares dependencies. It does not include test inputs, test result files, generated Excel files, generated pickle files, or the legacy web editor.
 
-## Install With uv
+## Install From GitHub Release
+
+Install the wheel directly from the GitHub release:
+
+```powershell
+python -m pip install https://github.com/YiWangPhD/res1d2excel/releases/download/v2.1.0/res1d2excel-2.1.0-py3-none-any.whl
+```
+
+With Conda, create and activate a Python 3.13 environment first:
+
+```powershell
+conda create -n res1d2excel python=3.13
+conda activate res1d2excel
+python -m pip install https://github.com/YiWangPhD/res1d2excel/releases/download/v2.1.0/res1d2excel-2.1.0-py3-none-any.whl
+```
+
+## Install A Local Wheel With uv
 
 ```powershell
 uv pip install dist\res1d2excel-2.1.0-py3-none-any.whl
 ```
 
-## Install With Conda
+## Install A Local Wheel With Conda
 
 Create and activate a Python 3.13 environment, then install the wheel with `pip`:
 
