@@ -13,7 +13,10 @@ wheels/
 *.pkl
 *.xlsx
 !tests/test_collection.xlsx
+plots_by_element.html
+plots_by_file.html
 
 # Excluded uml files
 *.png
+!docs/*.png
 res1d_UML_v1.2.txt

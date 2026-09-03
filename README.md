@@ -1,172 +1,404 @@
-Instructions:
+# res1d2excel
 
-0. Environment required:
-	python 3.13 or up
-	packages: pandas, numpy, mikeio1d, pythonnet
+`res1d2excel` extracts MIKE 1D and EPANET result data to Excel workbooks and optional interactive Plotly HTML pages.
 
-1. Run command to generate template files:
-	
-	res1d2excel
+It can be used from either:
 
-2. Use file "res1d2excel_template.xlsx" or "res1d2excel_template.json" to specify inputs and outputs. Run this command after:
-	
-	res1d2excel full_path_to_your_input_file
-	
-	for example:
-	res1d2excel ".\res1d2excel_template.xlsx"
+- the command line: `res1d2excel`
+- the graphical launcher: `res1d2excel-gui`
 
-2.1 Start the graphical launcher:
+## Requirements
 
-	res1d2excel-gui
+- Python 3.13 or newer
+- Packages declared in `pyproject.toml`, including `pandas`, `numpy`, `mikeio1d`, `pythonnet`, `openpyxl`, `plotly`, and `PySide6`
 
-3. In res1d2excel_template.xlsx file:
+## Build The Wheel
 
-3.1 List element MUIDs under corresponding sheets: catchment, node, link, orifice, pump, regulation, weir, valve, bridge, direct_discharge, and gate.
+```powershell
+uv build --wheel
+```
 
-3.2 In each row, put "alias" in first cell, "quantity" in 2nd cell, MUID in 3rd cell, and chainage in 4th for links and regulations. 
-	Chainages are default to zero. Inaccurate chainages will be moved to the closest one.
-	If multiple quantities are required for the same element, list them in separate rows. for example:
-		alias			quantity	muid	chainage
-		CA38_Level		WaterLevel	10149	0
-		CA38_Discharge	Discharge	10149	15
+The wheel is written to `dist/`, for example:
 
-3.3 List result files in sheet "res1d_files". Make sure the 1st cell is "network", "runoff", or "stats".
-	Use "network" for MIKE network result files and EPANET .res, .resx, and .whr files.
-	short names are used as column names or sheet names in output files. 
-	DO NOT duplicate short names
-	EPANET .res files require the matching .inp file to be saved beside the result file.
+```text
+dist/res1d2excel-2.1.0-py3-none-any.whl
+```
 
-3.4 In "output_files" sheet, you must provide a folder to save output files. Possible output files are:
-	by_elements		by_element.xlsx		time series organized by element types and MUIDs
-	by_file			by_file.xlsx		time series organized by result file short names
-	stats			stats.xlsx			statistics such as max, min, total, etc.
-	
-	DO NOT specify stats option if your result files are already statistics results. 
+The wheel contains the `res1d2excel` package and declares dependencies. It does not include test inputs, test result files, generated Excel files, generated pickle files, or the legacy web editor.
 
-	Use "to_html" with TRUE/FALSE to also export interactive Plotly HTML plot pages.
-	This creates plots_by_element.html and plots_by_file.html in the configured output folder.
-	Each page includes a dropdown filter to choose which element or result file to show.
-	
-	You can also specify a resampling time interval using the keyword "resample_t". 
-	Example resample intervals are 1day, 2h, 5min, 30s
-	Using unacceptable intervals will cause unexpected errors. No checking here.
-	see https://pandas.pydata.org/docs/reference/api/pandas.Timedelta.html
+## Install With uv
 
-	You can specify a skip time using the keyword "skip_time" to remove time series data
-	from the beginning of each result file before statistics and outputs are generated.
-	You can specify a truncation time using the keyword "trunc_time" to remove time series data
-	from the end of each result file before statistics and outputs are generated.
-	Example skip and truncation times use the same format as resample_t: 1day, 24h, 30min, 30s
-	
-4. Possible quantities for catchment simulations:
-	NetRainfall, TotalRunOff, 
-	SurfaceStorage, OverlandFlow, OverlandFlowFirstReservoir, OverlandFirstReservoirStorage, OverlandSecondReservoirStorage, 
-	RootZoneStorage, InterFlow, InterFlowAndBaseFlow, InterFlowFirstReservoir, CapillaryFlux, InfiltrationToGroundWater, 
-	GroundWaterDepth, BaseFlow, LowerBaseFlow
+```powershell
+uv pip install dist\res1d2excel-2.1.0-py3-none-any.whl
+```
 
-5. Possible quantities for network simulations:
+## Install With Conda
 
-	Nodes: 	WaterVolume, WaterLevel, TotalOutflow, TotalInflow, WaterSpillDischarge
-	
-	Links: 	WaterLevel, WaterVolume, TotalInflow, TotalOutflow, 
-			Discharge, DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
-			ControlStrategyId, FlowVelocity, 
-			DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive
-	
-	Orifices: WaterLevel, TotalInflow, TotalOutflow, 
-			Discharge, DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
-			ControlStrategyId, GateLevel, 
-			DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
-			FlowAreaInStructure, FlowVelocityInStructure
-	
-	Pumps: 	WaterLevel, TotalInflow, TotalOutflow, 
-			Discharge, DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
-			ControlStrategyId, PumpIsActive, 
-			DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive
- 
-	Regulations: WaterLevel, WaterVolume, TotalInflow, TotalOutflow, 
-			Discharge, DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
-			ControlStrategyId, FlowVelocity, 
-			DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
- 
-	Weirs: 	WaterLevel, TotalInflow, TotalOutflow, 
-			Discharge, DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
-			CrestLevel, ControlStrategyId, 
-			DischargeInStructure, DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
-			FlowAreaInStructure, FlowVelocityInStructure
+Create and activate a Python 3.13 environment, then install the wheel with `pip`:
 
-5.1 Possible quantities for EPANET result files:
+```powershell
+conda create -n res1d2excel python=3.13
+conda activate res1d2excel
+python -m pip install dist\res1d2excel-2.1.0-py3-none-any.whl
+```
 
-	Use "network" as result_type for EPANET .res, .resx, and .whr files.
-	For .res files, keep the matching .inp file beside the result file.
-	EPANET pumps and valves can be listed under link. When the .inp file or result quantities identify a pump or valve, they can also be listed under pump or valve.
+After installation, these commands are available:
 
-	Nodes:	Demand, Head, Pressure, WaterQuality, Volume, Volume Percentage
+```powershell
+res1d2excel
+res1d2excel-gui
+```
 
-	Links:	Flow, Velocity, HeadlossPer1000Unit, AvgWaterQuality,
-			StatusCode, Setting, ReactorRate, FrictionFactor
+## Command-Line Use
 
-	Pumps:	Pump efficiency, Pump energy costs, Pump energy
- 
-6. possible quantities for advection-dispersion simulations: (following examples are based on a pollutant named "sewage". replace with your pollutant)
-	
-	Nodes: sewageMass, sewage
-	
-	Links: sewageTransportMassPositive, sewageMass, sewageTransportMassNegative, sewageTransport, sewage, sewageTransportMass
- 
-	Orifices: sewageTransportMassPositive, sewageTransportMassNegative, sewageTransport, sewage, sewageTransportMass
- 
-	Pumps: sewageTransportMassPositive, sewageTransportMassNegative, sewageTransport, sewage, sewageTransportMass
- 
-	Weirs: sewageTransportMassPositive, sewageTransportMassNegative, sewageTransport, sewage, sewageTransportMass
- 
-7. Possible quantities for statistics result files:
-	
-	Nodes: 	WaterLevelAverage, WaterLevelMax, WaterLevelMaxTime, WaterLevelMin, WaterLevelMinTime, 
-			WaterVolumeAverage, WaterVolumeMax, WaterVolumeMaxTime, WaterVolumeMin, WaterVolumeMinTime, 
-			TotalInflow, TotalOutflow
- 
-	Links: 	WaterLevelAverage, WaterLevelMax, WaterLevelMaxTime, WaterLevelMin, WaterLevelMinTime, 
-			WaterVolumeAverage, WaterVolumeMax, WaterVolumeMaxTime, WaterVolumeMin, WaterVolumeMinTime, 
-			TotalInflow, TotalOutflow, 
-			DischargeAverage, DischargeMax, DischargeMaxTime, DischargeMin, DischargeMinTime, 
-			DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
-			ControlStrategyIdAverage, ControlStrategyIdMax, ControlStrategyIdMaxTime, ControlStrategyIdMin, ControlStrategyIdMinTime, 
-			DischargeInStructureAverage, DischargeInStructureMax, DischargeInStructureMaxTime, DischargeInStructureMin, DischargeInStructureMinTime, 
-			DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
-			FlowVelocityAverage, FlowVelocityMax, FlowVelocityMaxTime, FlowVelocityMin, FlowVelocityMinTime
- 
-	Orifices: WaterLevelAverage, WaterLevelMax, WaterLevelMaxTime, WaterLevelMin, WaterLevelMinTime, 
-			TotalInflow, TotalOutflow, 
-			DischargeAverage, DischargeMax, DischargeMaxTime, DischargeMin, DischargeMinTime, 
-			DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
-			GateLevelAverage, GateLevelMax, GateLevelMaxTime, GateLevelMin, GateLevelMinTime, 
-			ControlStrategyIdAverage, ControlStrategyIdMax, ControlStrategyIdMaxTime, ControlStrategyIdMin, ControlStrategyIdMinTime, 
-			DischargeInStructureAverage, DischargeInStructureMax, DischargeInStructureMaxTime, DischargeInStructureMin, DischargeInStructureMinTime, 
-			DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
-			FlowAreaInStructureAverage, FlowAreaInStructureMax, FlowAreaInStructureMaxTime, FlowAreaInStructureMin, FlowAreaInStructureMinTime, 
-			FlowVelocityInStructureAverage, FlowVelocityInStructureMax, FlowVelocityInStructureMaxTime, FlowVelocityInStructureMin, FlowVelocityInStructureMinTime
+Create template input files in the current folder:
 
-	Pumps: 	WaterLevelAverage, WaterLevelMax, WaterLevelMaxTime, WaterLevelMin, WaterLevelMinTime, 
-			TotalInflow, TotalOutflow, 
-			DischargeAverage, DischargeMax, DischargeMaxTime, DischargeMin, DischargeMinTime, 
-			DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
-			ControlStrategyIdAverage, ControlStrategyIdMax, ControlStrategyIdMaxTime, ControlStrategyIdMin, ControlStrategyIdMinTime, 
-			DischargeInStructureAverage, DischargeInStructureMax, DischargeInStructureMaxTime, DischargeInStructureMin, DischargeInStructureMinTime, 
-			DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive
+```powershell
+res1d2excel
+```
 
-	Weir: 	WaterLevelAverage, WaterLevelMax, WaterLevelMaxTime, WaterLevelMin, WaterLevelMinTime, 
-			TotalInflow, TotalOutflow, 
-			DischargeAverage, DischargeMax, DischargeMaxTime, DischargeMin, DischargeMinTime, 
-			DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive, 
-			CrestLevelAverage, CrestLevelMax, CrestLevelMaxTime, CrestLevelMin, CrestLevelMinTime, 
-			ControlStrategyIdAverage, ControlStrategyIdMax, ControlStrategyIdMaxTime, ControlStrategyIdMin, ControlStrategyIdMinTime, 
-			DischargeInStructureAverage, DischargeInStructureMax, DischargeInStructureMaxTime, DischargeInStructureMin, DischargeInStructureMinTime, 
-			DischargeInStructureVolume, DischargeInStructureVolumeNegative, DischargeInStructureVolumePositive, 
-			FlowAreaInStructureAverage, FlowAreaInStructureMax, FlowAreaInStructureMaxTime, FlowAreaInStructureMin, FlowAreaInStructureMinTime, 
-			FlowVelocityInStructureAverage, FlowVelocityInStructureMax, FlowVelocityInStructureMaxTime, FlowVelocityInStructureMin, FlowVelocityInStructureMinTime
+Run an existing JSON or Excel specification:
 
-	Tracer: sewageAverage, sewageMax, sewageMaxTime, sewageMin, sewageMinTime,
-			sewageTransportAverage, sewageTransportMax, sewageTransportMaxTime, sewageTransportMin, sewageTransportMinTime,
-			sewageMassAverage, sewageMassMax, sewageMassMaxTime, sewageMassMin, sewageMassMinTime,
-			sewageTransportMass, sewageTransportMassNegative, sewageTransportMassPositive
+```powershell
+res1d2excel path\to\input.json
+res1d2excel path\to\input.xlsx
+```
+
+## GUI Use
+
+Start the graphical launcher:
+
+```powershell
+res1d2excel-gui
+```
+
+The main window provides:
+
+- Python environment selection
+- environment validation
+- input file selection
+- `Run`
+- `Cancel`
+- `Edit Specifications`
+- `Create Template`
+- live process log output
+
+The selected Python environment must have `res1d2excel` and its dependencies installed. The validation button checks Python version and required imports.
+
+## GUI Workflows
+
+### Run An Existing Input File Without Editing
+
+1. Start `res1d2excel-gui`.
+2. Select a Python environment.
+3. Click `Validate`.
+4. Select an existing `.json` or `.xlsx` input file in the main window.
+5. Click `Run`.
+
+In this case, the GUI runs the selected file directly. It does not create an extra timestamped JSON copy.
+
+### Edit An Existing JSON File
+
+1. Open `Edit Specifications`.
+2. Click `Load JSON/XLSX`.
+3. Select an existing `.json` file.
+4. Edit values in the specification editor.
+5. Close the editor or leave it open.
+6. Click `Run` in the main window.
+
+Editor changes are passed back to the main window automatically. You do not need to click `Save JSON` before running.
+
+When you run an edited JSON specification, the GUI automatically saves a timestamped copy beside the original JSON file and runs that copy:
+
+```text
+test_river.json
+test_river_20260902191333.json
+```
+
+The original JSON file is not overwritten unless you explicitly choose it in the `Save JSON` dialog.
+
+### Edit An Existing Excel Input File
+
+1. Open `Edit Specifications`.
+2. Click `Load JSON/XLSX`.
+3. Select an existing `.xlsx` file.
+4. Edit values in the specification editor.
+5. Click `Run` in the main window.
+
+The Excel file is loaded into the GUI as an in-memory specification. If you run after editing, the GUI saves a timestamped JSON copy beside the Excel file and runs that JSON:
+
+```text
+test_collection.xlsx
+test_collection_20260902191333.json
+```
+
+The Excel file is not modified by the GUI.
+
+### Create A Specification Without Loading A File
+
+1. Open `Edit Specifications`.
+2. Enter specification values directly in the editor tabs.
+3. Click `Run` in the main window.
+
+Because there is no source file, the GUI saves a timestamped JSON file in the current working folder:
+
+```text
+res1d2excel_spec_20260902191333.json
+```
+
+The GUI then runs that generated JSON file.
+
+### Save Manually From The Editor
+
+Click `Save JSON` in the specification editor to choose where to save the current settings.
+
+After saving manually, that saved JSON becomes the current source path. Later edited runs will create timestamped copies beside that saved JSON.
+
+### Clear Inputs
+
+Click `Clear All` in the specification editor to reset to an empty valid specification:
+
+- all element tabs empty
+- `combined` empty
+- `res1d_files` empty
+- `output_files` reset to safe defaults
+- output options turned off
+
+The cleared specification is passed back to the main window automatically.
+
+## Specification Editor
+
+The specification editor is a second GUI window opened from `Edit Specifications`.
+
+It contains:
+
+- `Instructions` tab first, with collapsible sections
+- one tab per element type
+- `combined` tab
+- `output_files` tab
+- `res1d_files` tab
+
+Toolbar buttons outside the tabs:
+
+- `Load JSON/XLSX`
+- `Clear All`
+- `Save JSON`
+- `Close`
+
+Element tabs use table editing. Select a row to edit it in the form above the table. Use `Add Row`, `Copy Row`, and `Delete Row` to manage rows.
+
+The `combined` tab follows the legacy HTML editor pattern:
+
+- add a combined item
+- select it in the table
+- edit the alias
+- add or delete terms
+- choose `+` or `-`
+- choose a source element type
+- choose an alias from that source
+
+## Validation In The GUI
+
+Before running an edited in-memory specification, the GUI checks for common issues:
+
+- missing output folder
+- output folder does not exist
+- no output type selected
+- result rows missing `result_type`, `short_name`, or result file path
+- duplicate result short names within the same result type
+- missing result files
+- combined terms referencing missing aliases
+- incomplete element rows
+
+If validation fails, the run does not start.
+
+## Screenshots
+
+Main launcher:
+
+![Main GUI](docs/main.png)
+
+Specification editor link tab:
+
+![Specification Editor Link Tab](docs/specification_link.png)
+
+Specification editor combined tab:
+
+![Specification Editor Combined Tab](docs/specification_combined.png)
+
+## Test Fixtures
+
+Test inputs are kept under `tests/` and are not included in the wheel.
+
+Collection-system fixtures:
+
+```powershell
+uv run res1d2excel tests\test_collection.json
+uv run res1d2excel tests\test_collection.xlsx
+```
+
+EPANET fixture:
+
+```powershell
+uv run res1d2excel tests\test_epanet.json
+```
+
+River fixture:
+
+```powershell
+uv run res1d2excel tests\test_river.json
+```
+
+Some fixtures may emit warnings for requested elements that are not present in the sample result file. The run is still successful if exports complete.
+
+## Input Spreadsheet Format
+
+Use `res1d2excel_template.xlsx` or `res1d2excel_template.json` to specify inputs and outputs.
+
+List element MUIDs under corresponding sheets:
+
+- `catchment`
+- `node`
+- `link`
+- `orifice`
+- `pump`
+- `regulation`
+- `weir`
+- `valve`
+- `bridge`
+- `direct_discharge`
+- `gate`
+
+Each element row uses:
+
+```text
+alias | quantity | muid
+```
+
+`alias` is optional. It is only needed when that element row will be referenced by a combined item.
+
+For links and regulations, include `chainage`:
+
+```text
+alias | quantity | muid | chainage
+```
+
+Example:
+
+```text
+alias           quantity    muid   chainage
+CA38_Level      WaterLevel  10149  0
+CA38_Discharge  Discharge   10149  15
+```
+
+Chainage defaults to zero. Inaccurate chainages are moved to the closest available chainage.
+
+## Result Files
+
+List result files in `res1d_files`.
+
+Columns:
+
+```text
+result_type | short_name | res1d_file_path
+```
+
+Use:
+
+- `network` for MIKE network result files
+- `runoff` for MIKE runoff result files
+- `network` for EPANET `.res`, `.resx`, and `.whr` files
+
+Short names are used as output column names or sheet names. Do not duplicate short names within the same result type.
+
+For EPANET `.res` files, keep the matching `.inp` file beside the result file.
+
+## Output Files
+
+In `output_files`, provide a folder to save output files.
+
+Available outputs:
+
+```text
+by_elements | by_element.xlsx | time series organized by element
+by_file     | by_file.xlsx    | time series organized by result file
+stats       | stats.xlsx      | statistics output
+```
+
+Do not select `stats` if the result files already contain statistics.
+
+Use `to_html` with `TRUE` or `FALSE` to export interactive Plotly pages:
+
+```text
+plots_by_element.html
+plots_by_file.html
+```
+
+Optional time settings:
+
+- `resample_t`: resample time interval
+- `skip_time`: remove time from the beginning of each result
+- `trunc_time`: remove time from the end of each result
+
+Examples:
+
+```text
+1day
+2h
+5min
+30s
+```
+
+## Common Quantities
+
+Catchment quantities include:
+
+```text
+NetRainfall, TotalRunOff, SurfaceStorage, OverlandFlow,
+OverlandFlowFirstReservoir, OverlandFirstReservoirStorage,
+OverlandSecondReservoirStorage, RootZoneStorage, InterFlow,
+InterFlowAndBaseFlow, InterFlowFirstReservoir, CapillaryFlux,
+InfiltrationToGroundWater, GroundWaterDepth, BaseFlow, LowerBaseFlow
+```
+
+Network node quantities include:
+
+```text
+WaterVolume, WaterLevel, TotalOutflow, TotalInflow, WaterSpillDischarge
+```
+
+Network link quantities include:
+
+```text
+WaterLevel, WaterVolume, TotalInflow, TotalOutflow, Discharge,
+DischargeVolume, DischargeVolumeNegative, DischargeVolumePositive,
+ControlStrategyId, FlowVelocity, DischargeInStructure,
+DischargeInStructureVolume, DischargeInStructureVolumeNegative,
+DischargeInStructureVolumePositive
+```
+
+EPANET node quantities include:
+
+```text
+Demand, Head, Pressure, WaterQuality, Volume, Volume Percentage
+```
+
+EPANET link quantities include:
+
+```text
+Flow, Velocity, HeadlossPer1000Unit, AvgWaterQuality,
+StatusCode, Setting, ReactorRate, FrictionFactor
+```
+
+EPANET pump quantities include:
+
+```text
+Pump efficiency, Pump energy costs, Pump energy
+```
+
+Advection-dispersion quantities depend on pollutant name. For a pollutant named `sewage`, examples include:
+
+```text
+sewageMass, sewage, sewageTransportMassPositive,
+sewageTransportMassNegative, sewageTransport, sewageTransportMass
+```

@@ -24,6 +24,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from . import spec_model
+from .spec_editor import SpecificationEditorWindow
+
 
 MIN_PYTHON = (3, 13)
 REQUIRED_IMPORTS = [
@@ -43,6 +46,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("res1d2excel")
         self.resize(900, 620)
         self.process: QProcess | None = None
+        self.current_spec: dict | None = None
+        self.spec_source_path: str | None = None
+        self.spec_editor: SpecificationEditorWindow | None = None
 
         self.python_edit = QLineEdit(sys.executable)
         self.input_edit = QLineEdit()
@@ -93,6 +99,8 @@ class MainWindow(QMainWindow):
         layout.addLayout(form)
 
         actions = QHBoxLayout()
+        spec_editor_button = QPushButton("Edit Specifications")
+        spec_editor_button.clicked.connect(self.open_spec_editor)
         template_button = QPushButton("Create Template")
         template_button.clicked.connect(self.create_template)
         clear_button = QPushButton("Clear Log")
@@ -103,6 +111,7 @@ class MainWindow(QMainWindow):
 
         actions.addWidget(self.run_button)
         actions.addWidget(self.cancel_button)
+        actions.addWidget(spec_editor_button)
         actions.addWidget(template_button)
         actions.addStretch(1)
         actions.addWidget(clear_button)
@@ -163,7 +172,45 @@ class MainWindow(QMainWindow):
             "Input files (*.xlsx *.json);;Excel files (*.xlsx);;JSON files (*.json)",
         )
         if path:
+            self.current_spec = None
+            self.spec_source_path = path
             self.input_edit.setText(path)
+
+    def open_spec_editor(self) -> None:
+        if self.spec_editor is not None:
+            self.spec_editor.raise_()
+            self.spec_editor.activateWindow()
+            return
+
+        spec = self.current_spec
+        source_path = self.spec_source_path
+        input_path = self.input_edit.text().strip()
+        if spec is None and input_path and Path(input_path).is_file():
+            try:
+                spec = spec_model.load_spec(input_path)
+                source_path = input_path
+            except Exception as exc:
+                QMessageBox.warning(self, "Load Failed", str(exc))
+                spec = None
+                source_path = None
+
+        self.spec_editor = SpecificationEditorWindow(spec, source_path)
+        self.spec_editor.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.spec_editor.spec_changed.connect(self.receive_spec_from_editor)
+        self.spec_editor.destroyed.connect(lambda _obj=None: self._spec_editor_closed())
+        self.spec_editor.show()
+
+    def receive_spec_from_editor(self, spec: dict, source_path: object) -> None:
+        self.current_spec = spec_model.normalize_spec(spec)
+        self.spec_source_path = str(source_path) if source_path else None
+        if self.spec_source_path:
+            self.input_edit.setText(f"Using edited specification from {self.spec_source_path}")
+        else:
+            self.input_edit.setText("Using edited in-memory specification")
+        self._set_status("Edited specification ready", ok=True)
+
+    def _spec_editor_closed(self) -> None:
+        self.spec_editor = None
 
     def validate_environment(self) -> None:
         python = self.python_edit.text().strip()
@@ -216,6 +263,25 @@ class MainWindow(QMainWindow):
             self.append_log(stderr)
 
     def run_conversion(self) -> None:
+        if self.current_spec is not None:
+            errors = spec_model.validate_spec(self.current_spec)
+            if errors:
+                QMessageBox.warning(
+                    self,
+                    "Specification Issues",
+                    "\n".join(errors[:10]) + ("\n..." if len(errors) > 10 else ""),
+                )
+                return
+            run_path = spec_model.timestamped_json_path(self.spec_source_path)
+            try:
+                spec_model.save_spec_to_json(self.current_spec, run_path)
+            except Exception as exc:
+                QMessageBox.critical(self, "Save Failed", str(exc))
+                return
+            self.append_log(f"Saved edited specification to {run_path}")
+            self._start_package_process([str(run_path)])
+            return
+
         input_path = self.input_edit.text().strip()
         if not input_path:
             QMessageBox.warning(self, "Input Required", "Select a .xlsx or .json input file first.")

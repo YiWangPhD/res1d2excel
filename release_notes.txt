@@ -60,6 +60,18 @@ added optional Plotly HTML plot export from res1d2excel.py using the to_html out
 added dropdown filters for exported plots organized by element and by result file
 added to_html support to spreadsheet/json templates, example json files, and browser input editor
 
+v2.0.0 - 2026-9-2
+packaged res1d2excel as an installable wheel with command-line and GUI entry points
+added graphical launcher for selecting Python environments, validating dependencies, selecting input files, running exports, and cancelling active runs
+reorganized package source under src/res1d2excel and excluded test inputs from wheel contents
+
+v2.1.0 - 2026-9-2
+added native specification editor window opened from the main GUI
+added editor tabs for instructions, model elements, combined elements, output files, and result files
+added JSON/XLSX loading, automatic in-memory pass-back to the main window, manual JSON save, clear-all reset, and timestamped JSON copies for edited runs
+added validation updates for optional element aliases and required combined-item aliases
+added README GUI workflow documentation and screenshots
+
 to do list:
     extract multiple time periods from the same res1d file
     export to pdf
