@@ -5,14 +5,14 @@
 
 import os
 import sys
-import input_dataframes
-import input_xlsx
-import input_json
-import res1d_extractors
-import exporter
-import exporter_xlsx
-import exporter_html
-import element_collection
+from . import input_dataframes
+from . import input_xlsx
+from . import input_json
+from . import res1d_extractors
+from . import exporter
+from . import exporter_xlsx
+from . import exporter_html
+from . import element_collection
 import pickle
 from typing import Any, List
 
@@ -23,13 +23,12 @@ InputDataframes = List[Any]
 
 # read input files to dataframes
 def read_input_files(args: List[str]) -> InputDataframes:
-    if len(args) == 2 and os.path.isfile(args[1]):
+    if len(args) == 1 and os.path.isfile(args[0]):
         # one input file
-        if os.path.splitext(args[1])[1].lower() == '.json':
-            return input_json.read_dataframes_from_json(args[1])
-        return input_xlsx.read_dataframes_from_xlsx(args[1])
-    print('Please provide one input file.')
-    exit()
+        if os.path.splitext(args[0])[1].lower() == '.json':
+            return input_json.read_dataframes_from_json(args[0])
+        return input_xlsx.read_dataframes_from_xlsx(args[0])
+    raise ValueError('Please provide one input file.')
 
 
 # build collections from dataframes
@@ -106,8 +105,11 @@ def export_results(
         )
         print(f'HTML plots exported to file: {html_file_path}')
 
-def main():
-    if len(sys.argv) == 1:
+def main(argv: List[str] | None = None) -> None:
+    if argv is None:
+        argv = sys.argv[1:]
+
+    if len(argv) == 0:
         #create templates
         xlsx_file_path = os.path.join(os.getcwd(), "res1d2excel_template.xlsx")
         json_file_path = os.path.join(os.getcwd(), "res1d2excel_template.json")
@@ -115,11 +117,11 @@ def main():
         input_json.create_template_json(json_file_path)
         print(f'Spreadsheet template has been created and saved at: {xlsx_file_path}')
         print(f'JSON template has been created and saved at: {json_file_path}')
-        exit()
+        return
     
     #process input files
     print("Reading configuration files ...")
-    dfs_list = read_input_files(sys.argv)
+    dfs_list = read_input_files(argv)
     [res1d_dict, element_collections, xlsx_dict] = create_collections(dfs_list)
     print("Finished reading configuration files.")
     

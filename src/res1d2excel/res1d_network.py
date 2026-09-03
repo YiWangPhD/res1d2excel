@@ -10,8 +10,8 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
-import res1d
-import utilities
+from . import res1d
+from . import utilities
 
 
 @dataclass

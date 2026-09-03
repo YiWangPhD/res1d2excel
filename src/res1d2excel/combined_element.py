@@ -12,8 +12,8 @@ from typing import Dict, Optional, List
 import pandas as pd
 import warnings
 
-from base_element import BaseElement
-import statistics_calculator
+from .base_element import BaseElement
+from . import statistics_calculator
 
 
 CALCULATED_DISCHARGE = "CalculatedDischarge"

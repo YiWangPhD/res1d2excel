@@ -70,12 +70,12 @@
     {
       "result_type": "network",
       "short_name": "epanet_res",
-      "file_path": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel\\test_data\\epanet.res"
+      "file_path": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel\\tests\\test_data\\epanet.res"
     },
     {
       "result_type": "network",
       "short_name": "epanet_resx",
-      "file_path": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel\\test_data\\epanet.resx"
+      "file_path": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel\\tests\\test_data\\epanet.resx"
     }
   ]
 }

@@ -7,7 +7,7 @@ import os
 
 import pandas as pd
 
-import input_dataframes
+from . import input_dataframes
 
 
 DISCHARGE_QUANTITIES = ['Discharge', 'DischargeInStructure', 'OverlandFlow',

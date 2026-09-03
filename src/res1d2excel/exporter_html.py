@@ -10,7 +10,7 @@ import os
 from typing import Mapping
 
 import pandas as pd
-import utilities_plotly
+from . import utilities_plotly
 
 
 def export_plot_page(

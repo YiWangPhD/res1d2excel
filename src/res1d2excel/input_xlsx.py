@@ -5,7 +5,7 @@
 import os
 import pandas as pd
 import numpy as np
-import input_dataframes
+from . import input_dataframes
 
 
 ELEMENT_SHEETS = [

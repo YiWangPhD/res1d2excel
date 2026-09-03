@@ -11,9 +11,9 @@ import pandas as pd
 import os
 import warnings
 
-from base_element import BaseElement
-import combined_element
-import simple_element
+from .base_element import BaseElement
+from . import combined_element
+from . import simple_element
 
 
 ElementDataFrames = Dict[str, pd.DataFrame]

@@ -12,6 +12,7 @@ wheels/
 # Generated result files
 *.pkl
 *.xlsx
+!tests/test_collection.xlsx
 
 # Excluded uml files
 *.png

@@ -276,12 +276,12 @@
     {
       "result_type": "network",
       "short_name": "event1",
-      "res1d_file_path": "C:\\path\\to\\network_result.res1d"
+      "res1d_file_path": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel\\tests\\test_data\\Rainfall_CDS_1yearHDBaseDefault_Network_HD.res1d"
     },
     {
       "result_type": "runoff",
       "short_name": "event1",
-      "res1d_file_path": "C:\\path\\to\\runoff_result.res1d"
+      "res1d_file_path": "C:\\Users\\yiwan\\Documents\\Python\\res1d2excel\\tests\\test_data\\Rainfall_CDS_1_yearRRBaseDefault_Surface_runoff.res1d"
     }
   ],
   "output_files": {

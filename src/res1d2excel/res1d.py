@@ -9,7 +9,7 @@ import sys
 import pandas as pd
 import numpy as np
 
-import utilities
+from . import utilities
 
 from mikeio1d.mikepath import MikePath
 MikePath.setup_mike_installation(sys.path)

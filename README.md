@@ -1,19 +1,23 @@
 Instructions:
 
 0. Environment required:
-	python 3.11 or up
+	python 3.13 or up
 	packages: pandas, numpy, mikeio1d, pythonnet
 
-1. Run command to generate a template spreadsheet:
+1. Run command to generate template files:
 	
-	python res1d2excel.py
+	res1d2excel
+
+2. Use file "res1d2excel_template.xlsx" or "res1d2excel_template.json" to specify inputs and outputs. Run this command after:
 	
-2. Use file "res1d2excel_template.xlsx" to specify inputs and outputs. Run this command after:
-	
-	python res1d2excel.py full_path_to_your_spreadsheet
+	res1d2excel full_path_to_your_input_file
 	
 	for example:
-	python res1d2excel.py ".\res1d2excel_template.xlsx"
+	res1d2excel ".\res1d2excel_template.xlsx"
+
+2.1 Start the graphical launcher:
+
+	res1d2excel-gui
 
 3. In res1d2excel_template.xlsx file:
 
