@@ -29,6 +29,8 @@ class ColumnMatch:
     column: Optional[Union[str, tuple[str, float]]] = None
     reason: Optional[str] = None
     available_columns: Optional[list[Any]] = None
+    available_simple_columns: Optional[list[Any]] = None
+    available_tuple_columns: Optional[list[Any]] = None
     available_element_ids: Optional[list[Any]] = None
     available_chainages: Optional[list[Any]] = None
     selected_chainage: Any = None
@@ -304,18 +306,65 @@ class ElementCollection:
                 available_columns=[],
             )
 
-        # Simple columns
         if not isinstance(cols, pd.MultiIndex):
-            if element_id in cols:
-                return ColumnMatch(column=element_id)
-            return ColumnMatch(
-                reason=f"element id '{element_id}' was not found in dataframe columns",
-                available_columns=list(cols),
+            return self._find_column_in_index(element, cols)
+
+        return self._find_column_in_multiindex(element, cols, df)
+
+    def _find_column_in_index(
+        self,
+        element: BaseElement,
+        cols: pd.Index,
+    ) -> ColumnMatch:
+        element_id = element.get_element_id()
+        tuple_columns = self._tuple_columns(cols)
+        simple_columns = [col for col in cols if not isinstance(col, tuple)]
+
+        tuple_match = self._find_tuple_column(element, tuple_columns)
+        simple_column = self._find_id_column(simple_columns, element_id)
+        simple_match = (
+            ColumnMatch(column=simple_column)
+            if simple_column is not None else None
+        )
+
+        if element.get_element_type() in {"link", "regulation"}:
+            if tuple_match.column is not None:
+                return tuple_match
+            if simple_match is not None:
+                return simple_match
+        else:
+            if simple_match is not None:
+                return simple_match
+            if tuple_match.column is not None:
+                return tuple_match
+
+        if tuple_match.reason is not None:
+            return tuple_match
+
+        return ColumnMatch(
+            reason=f"element id '{element_id}' was not found in dataframe columns",
+            available_simple_columns=simple_columns,
+            available_tuple_columns=tuple_columns,
+            available_element_ids=self._unique_values(
+                col[0] for col in tuple_columns
+            ),
+        )
+
+    def _find_column_in_multiindex(
+        self,
+        element: BaseElement,
+        cols: pd.MultiIndex,
+        df: pd.DataFrame,
+    ) -> ColumnMatch:
+        if cols.nlevels != 2:
+            raise ValueError(
+                "MultiIndex dataframe columns must have exactly 2 levels "
+                f"(muid, chainage). Found {cols.nlevels} levels."
             )
 
-        # MultiIndex case
+        element_id = element.get_element_id()
         level0 = cols.get_level_values(0)
-        if element_id not in level0:
+        if not self._column_contains_id(level0, element_id):
             return ColumnMatch(
                 reason=(
                     f"element id '{element_id}' was not found in dataframe "
@@ -324,7 +373,12 @@ class ElementCollection:
                 available_element_ids=self._unique_values(level0),
             )
 
-        sub_df = df[element_id]
+        matched_level0 = next(
+            value for value in level0
+            if self._ids_equal(value, element_id)
+        )
+
+        sub_df = df[matched_level0]
         chainages = sub_df.columns
         if len(chainages) == 0:
             return ColumnMatch(
@@ -336,24 +390,84 @@ class ElementCollection:
                 available_chainages=[],
             )
 
-        if element_chainage == self.CHAINAGE_LAST:
+        return self._match_chainage_to_column(
+            element,
+            [(matched_level0, chainage) for chainage in chainages],
+            available_element_ids=self._unique_values(level0),
+        )
+
+    def _find_tuple_column(
+        self,
+        element: BaseElement,
+        tuple_columns: list[tuple[Any, ...]],
+    ) -> ColumnMatch:
+        if not tuple_columns:
+            return ColumnMatch()
+
+        element_id = element.get_element_id()
+        matches = [
+            col for col in tuple_columns
+            if self._ids_equal(col[0], element_id)
+        ]
+        if not matches:
+            return ColumnMatch()
+
+        return self._match_chainage_to_column(
+            element,
+            matches,
+            available_element_ids=self._unique_values(
+                col[0] for col in tuple_columns
+            ),
+            available_tuple_columns=tuple_columns,
+        )
+
+    def _match_chainage_to_column(
+        self,
+        element: BaseElement,
+        columns: list[tuple[Any, Any]],
+        available_element_ids: Optional[list[Any]] = None,
+        available_tuple_columns: Optional[list[Any]] = None,
+    ) -> ColumnMatch:
+        element_chainage = element.get_chainage()
+        chainages = [col[1] for col in columns]
+
+        if len(chainages) == 0:
             return ColumnMatch(
-                column=(element_id, chainages[-1]),
-                available_chainages=list(chainages),
-                selected_chainage=chainages[-1],
+                reason=(
+                    f"element id '{element.get_element_id()}' was found, "
+                    "but no chainage columns were available"
+                ),
+                available_element_ids=available_element_ids,
+                available_tuple_columns=available_tuple_columns,
+                available_chainages=[],
+            )
+
+        if element_chainage == self.CHAINAGE_LAST:
+            selected = columns[-1]
+            return ColumnMatch(
+                column=selected,
+                available_element_ids=available_element_ids,
+                available_tuple_columns=available_tuple_columns,
+                available_chainages=chainages,
+                selected_chainage=selected[1],
             )
 
         try:
-            closest = min(chainages, key=lambda c: abs(c - element_chainage))
+            selected = min(
+                columns,
+                key=lambda col: abs(float(col[1]) - float(element_chainage)),
+            )
         except (TypeError, ValueError) as exc:
             return ColumnMatch(
                 reason=(
                     f"could not match requested chainage {element_chainage} "
                     "against available chainages"
                 ),
-                available_element_ids=self._unique_values(level0),
-                available_chainages=list(chainages),
+                available_element_ids=available_element_ids,
+                available_tuple_columns=available_tuple_columns,
+                available_chainages=chainages,
             )
+        closest = selected[1]
         if not self._chainages_equal(element_chainage, closest):
             details = ""
             if diagnostics.is_debug():
@@ -368,8 +482,10 @@ class ElementCollection:
                 stacklevel=3,
             )
         return ColumnMatch(
-            column=(element_id, closest),
-            available_chainages=list(chainages),
+            column=selected,
+            available_element_ids=available_element_ids,
+            available_tuple_columns=available_tuple_columns,
+            available_chainages=chainages,
             selected_chainage=closest,
         )
 
@@ -470,6 +586,39 @@ class ElementCollection:
         return sorted(items, key=lambda item: str(item))
 
     @staticmethod
+    def _ids_equal(left: Any, right: Any) -> bool:
+        return str(left).strip() == str(right).strip()
+
+    @staticmethod
+    def _column_contains_id(columns: Iterable[Any], element_id: Any) -> bool:
+        return any(
+            ElementCollection._ids_equal(column, element_id)
+            for column in columns
+        )
+
+    @staticmethod
+    def _find_id_column(columns: Iterable[Any], element_id: Any) -> Any:
+        for column in columns:
+            if ElementCollection._ids_equal(column, element_id):
+                return column
+        return None
+
+    @staticmethod
+    def _tuple_columns(cols: pd.Index) -> list[tuple[Any, ...]]:
+        tuple_columns = [col for col in cols if isinstance(col, tuple)]
+        invalid_columns = [
+            col for col in tuple_columns
+            if len(col) != 2
+        ]
+        if invalid_columns:
+            raise ValueError(
+                "Tuple dataframe columns must have exactly 2 values "
+                "(muid, chainage). Invalid columns: "
+                f"{diagnostics.format_values(invalid_columns)}"
+            )
+        return tuple_columns
+
+    @staticmethod
     def _warn_no_timeseries(
         element: BaseElement,
         filename: str,
@@ -487,6 +636,16 @@ class ElementCollection:
                 debug_parts.append(
                     "Available columns: "
                     f"{diagnostics.format_values(match.available_columns)}"
+                )
+            if match.available_simple_columns is not None:
+                debug_parts.append(
+                    "Available simple columns: "
+                    f"{diagnostics.format_values(match.available_simple_columns)}"
+                )
+            if match.available_tuple_columns is not None:
+                debug_parts.append(
+                    "Available tuple columns: "
+                    f"{diagnostics.format_values(match.available_tuple_columns)}"
                 )
             if match.available_element_ids is not None:
                 debug_parts.append(
