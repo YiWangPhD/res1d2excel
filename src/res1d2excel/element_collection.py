@@ -10,6 +10,7 @@ from typing import Any, Dict, Iterable, Iterator, List, Optional, Union
 import pandas as pd
 import os
 import warnings
+import math
 
 from .base_element import BaseElement
 from . import combined_element
@@ -133,7 +134,6 @@ class ElementCollection:
         if element_df.empty:
             return collection
 
-        element_df = element_df.fillna(0)
         for _, row in element_df.iterrows():
             collection.add_element(cls._row_to_simple_element(element_type, row))
 
@@ -209,20 +209,36 @@ class ElementCollection:
         if not filename:
             raise ValueError("filename must be provided")
 
-        for quantity_id, df in dfs.items():
+        for quantity_id, elements in self._quantities.items():
+            df = dfs.get(quantity_id)
+
+            if df is None:
+                for element in elements.values():
+                    warnings.warn(
+                        "No timeseries assigned to "
+                        f"{self._format_element_for_warning(element)} "
+                        f"from result file '{filename}': quantity "
+                        f"'{quantity_id}' was not returned.",
+                        stacklevel=2,
+                    )
+                continue
 
             if not isinstance(df, pd.DataFrame):
                 raise TypeError(f"{quantity_id} must map to a DataFrame")
 
-            if quantity_id not in self._quantities:
-                continue
-
-            for element in self._quantities[quantity_id].values():
-
+            for element in elements.values():
                 col = self._find_column_in_dataframe(element, df)
 
                 if col is not None:
                     element.add_ts(filename, df[col])
+
+                if element.get_ts(filename) is None:
+                    warnings.warn(
+                        "No timeseries assigned to "
+                        f"{self._format_element_for_warning(element)} "
+                        f"from result file '{filename}'.",
+                        stacklevel=2,
+                    )
 
     # -------------------------
     # Update derived elements (CombinedElement)
@@ -288,6 +304,13 @@ class ElementCollection:
             return (element_id, chainages[-1])
 
         closest = min(chainages, key=lambda c: abs(c - element_chainage))
+        if not self._chainages_equal(element_chainage, closest):
+            warnings.warn(
+                f"{self._format_element_for_warning(element)} requested "
+                f"chainage {element_chainage}; using nearest available "
+                f"chainage {closest}.",
+                stacklevel=3,
+            )
         return (element_id, closest)
 
     @staticmethod
@@ -296,12 +319,21 @@ class ElementCollection:
         row: pd.Series
     ) -> simple_element.SimpleElement:
         alias = row.get("alias")
-        if alias == 0:
+        if ElementCollection._is_missing_value(alias):
             alias = None
 
         quantity = row.get("quantity")
         muid = str(row.get("muid"))
         chainage = row.get("chainage", 0.0)
+        if ElementCollection._is_missing_value(chainage):
+            if element_type in {"link", "regulation"}:
+                warnings.warn(
+                    f"{element_type} element '{muid}' quantity "
+                    f"'{quantity}' has blank chainage; using 0.0 for "
+                    "nearest-chainage matching.",
+                    stacklevel=2,
+                )
+            chainage = 0.0
 
         return simple_element.SimpleElement(
             muid,
@@ -349,3 +381,25 @@ class ElementCollection:
             raise ValueError(f"{source}.{alias} is not a discharge-like quantity")
 
         return element
+
+    @staticmethod
+    def _chainages_equal(left: Any, right: Any) -> bool:
+        try:
+            return math.isclose(float(left), float(right))
+        except (TypeError, ValueError):
+            return left == right
+
+    @staticmethod
+    def _format_element_for_warning(element: BaseElement) -> str:
+        return (
+            f"{element.get_element_type()} element "
+            f"'{element.get_element_id()}' quantity "
+            f"'{element.get_quantity_id()}'"
+        )
+
+    @staticmethod
+    def _is_missing_value(value: Any) -> bool:
+        try:
+            return bool(pd.isna(value))
+        except (TypeError, ValueError):
+            return False

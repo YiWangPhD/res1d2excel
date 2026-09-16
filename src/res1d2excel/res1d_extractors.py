@@ -7,9 +7,17 @@
 
 from . import element_collection
 import pandas as pd
+import warnings
 from . import combined_element
 from . import res1d_network
 from . import res1d_runoff
+
+
+NETWORK_ELEMENT_TYPES = {
+    'node', 'link', 'orifice', 'pump', 'regulation', 'weir', 'valve',
+    'bridge', 'culvert', 'direct_discharge', 'gate'
+}
+RUNOFF_ELEMENT_TYPES = {'catchment'}
 
 
 def batch_res1d_extractor(
@@ -40,6 +48,18 @@ def batch_res1d_extractor(
     None.
 
     """
+    unknown_result_types = sorted(
+        result_type for result_type in res1d_dict
+        if result_type not in {'network', 'runoff'}
+    )
+    if unknown_result_types:
+        raise ValueError(
+            "Invalid result_type value(s): "
+            f"{', '.join(unknown_result_types)}. "
+            "Use exactly one of: network, runoff."
+        )
+    _warn_collections_without_supported_result(res1d_dict, elem_collection_list)
+
     if 'network' in res1d_dict:
         for short_name, res1d_file_path in res1d_dict['network'].items():
             print(f'Loading result file {res1d_file_path} ...')
@@ -215,6 +235,8 @@ def extract_element_ts(res1d, elem_collection):
     dfs = None
 
     if isinstance(res1d, res1d_network.Res1DNetwork):
+        if element_type.lower() not in NETWORK_ELEMENT_TYPES:
+            return None
         match element_type.lower():
             case 'node':
                 dfs = res1d.get_node_data_frames(element_ids, quantity_ids)
@@ -241,9 +263,36 @@ def extract_element_ts(res1d, elem_collection):
                 dfs = res1d.get_gate_data_frames(element_ids, quantity_ids)
     
     if isinstance(res1d, res1d_runoff.Res1DRunoff):
+        if element_type.lower() not in RUNOFF_ELEMENT_TYPES:
+            return None
         dfs = res1d.get_catchment_data_frames(element_ids, quantity_ids)
     
     return dfs
+
+
+def _warn_collections_without_supported_result(res1d_dict, elem_collection_list):
+    supported_element_types = set()
+    if 'network' in res1d_dict:
+        supported_element_types.update(NETWORK_ELEMENT_TYPES)
+    if 'runoff' in res1d_dict:
+        supported_element_types.update(RUNOFF_ELEMENT_TYPES)
+
+    for elem_collection in elem_collection_list:
+        if is_calculated_collection(elem_collection):
+            continue
+        if len(elem_collection) == 0:
+            continue
+        element_type = elem_collection.get_element_type().lower()
+        if element_type in supported_element_types:
+            continue
+
+        warnings.warn(
+            f"Skipping {elem_collection.get_element_type()} collection with "
+            f"{len(elem_collection)} configured element(s): none of the "
+            "configured result files support this element type. Available "
+            f"result_type values: {', '.join(sorted(res1d_dict)) or 'none'}.",
+            stacklevel=3,
+        )
     
     
 def test_network():

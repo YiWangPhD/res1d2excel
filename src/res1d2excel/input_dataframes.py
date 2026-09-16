@@ -10,6 +10,7 @@ from . import element_collection
 
 
 COMBINED_QUANTITY = "CalculatedDischarge"
+VALID_RESULT_TYPES = {"network", "runoff"}
 
 RESAMPLE_UNIT_ALIASES = {
     "d": "D",
@@ -332,9 +333,16 @@ def create_res1d_collections_from_dataframes(dfs):
     res1d_dict = {}
     for sheet_name, sheet_df in dfs.items():
         for index, row in sheet_df.iterrows():
-            result_type = row.iloc[0]
+            result_type = str(row.iloc[0])
             short_name = row.iloc[1]
             res1d_file_path = row.iloc[2]
+
+            if result_type not in VALID_RESULT_TYPES:
+                raise ValueError(
+                    "Invalid result_type "
+                    f"'{result_type}' in res1d_files row {index + 1}. "
+                    "Use exactly one of: network, runoff."
+                )
 
             if result_type in res1d_dict:
                 res1d_dict[result_type][short_name] = res1d_file_path
