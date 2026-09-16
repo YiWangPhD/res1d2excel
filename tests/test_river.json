@@ -27,6 +27,13 @@
   ],
   "valve": [],
   "bridge": [],
+  "culvert": [
+    {
+      "alias": "bridge1_flow_area",
+      "quantity": "FlowAreaInStructure",
+      "muid": "bridge1"
+    }
+  ],
   "direct_discharge": [],
   "gate": [
     {

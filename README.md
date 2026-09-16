@@ -282,6 +282,7 @@ List element MUIDs under corresponding sheets:
 - `weir`
 - `valve`
 - `bridge`
+- `culvert`
 - `direct_discharge`
 - `gate`
 

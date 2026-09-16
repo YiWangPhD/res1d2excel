@@ -232,6 +232,8 @@ def extract_element_ts(res1d, elem_collection):
                 dfs = res1d.get_valve_data_frames(element_ids, quantity_ids)
             case 'bridge':
                 dfs = res1d.get_bridge_data_frames(element_ids, quantity_ids)
+            case 'culvert':
+                dfs = res1d.get_culvert_data_frames(element_ids, quantity_ids)
             case 'direct_discharge':
                 dfs = res1d.get_direct_discharge_data_frames(
                     element_ids, quantity_ids)

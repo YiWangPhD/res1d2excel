@@ -254,7 +254,8 @@ class Res1D:
         if data.ndim == 1:
             data = data.reshape(-1, 1)
         d = pd.DataFrame(data)
-        if d.shape[1] == 1:
+        if d.shape[1] == 1 and (
+                chainages is None or len(chainages) != d.shape[1]):
             d.columns = [name]
             return d
 

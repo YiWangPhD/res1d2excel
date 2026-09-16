@@ -10,10 +10,10 @@ from . import input_dataframes
 
 ELEMENT_SHEETS = [
     'catchment', 'node', 'link', 'orifice', 'pump', 'regulation',
-    'weir', 'valve', 'bridge', 'direct_discharge', 'gate'
+    'weir', 'valve', 'bridge', 'culvert', 'direct_discharge', 'gate'
 ]
 
-OPTIONAL_ELEMENT_SHEETS = ['bridge', 'direct_discharge', 'gate']
+OPTIONAL_ELEMENT_SHEETS = ['bridge', 'culvert', 'direct_discharge', 'gate']
 
 # dataframe <==> xlsx
 # write dataframe templates to spreadsheets:

@@ -111,6 +111,11 @@ def create_element_collections_dataframes_template():
         'quantity': ['DischargeInStructure'],
         'muid': ['Spur-4 Bridge']
         })
+    dfs['culvert'] = pd.DataFrame({
+        'alias': [],
+        'quantity': [],
+        'muid': []
+        })
     dfs['direct_discharge'] = pd.DataFrame({
         'alias': ['Lower_Outlet_East_Discharge'],
         'quantity': ['DischargeInStructure'],

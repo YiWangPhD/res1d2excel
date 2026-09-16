@@ -258,6 +258,7 @@
       "muid": "Spur-4 Bridge"
     }
   ],
+  "culvert": [],
   "direct_discharge": [
     {
       "alias": "Lower_Outlet_East_Discharge",

@@ -9,6 +9,7 @@ const data = {
     weir: [],
     valve: [],
     bridge: [],
+    culvert: [],
     direct_discharge: [],
     gate: [],
     combined: [],
@@ -39,6 +40,7 @@ const defaultSchemas = {
     weir: ["alias", "quantity", "muid"],
     valve: ["alias", "quantity", "muid"],
     bridge: ["alias", "quantity", "muid"],
+    culvert: ["alias", "quantity", "muid"],
     direct_discharge: ["alias", "quantity", "muid"],
     gate: ["alias", "quantity", "muid"],
     res1d_files: ["result_type", "short_name", "file_path"],
@@ -47,7 +49,7 @@ const defaultSchemas = {
 
 const combinedSources = [
     "catchment", "node", "link", "orifice", "pump", "regulation",
-    "weir", "valve", "bridge", "direct_discharge", "gate"
+    "weir", "valve", "bridge", "culvert", "direct_discharge", "gate"
 ];
 
 let currentTab = "";
@@ -795,7 +797,7 @@ function loadJSON() {
             }
         });
 
-        ["bridge", "direct_discharge", "gate"].forEach(key => {
+        ["bridge", "culvert", "direct_discharge", "gate"].forEach(key => {
             if (!Array.isArray(data[key])) {
                 data[key] = [];
             }
@@ -902,7 +904,7 @@ ${section("2. Run with JSON Input", `
 
 ${section("3. How to Use This Webpage", `
 <h4>3.1 Element Tabs</h4>
-<p>Use tabs: catchment, node, link, orifice, pump, regulation, weir, valve, bridge, direct_discharge, gate</p>
+<p>Use tabs: catchment, node, link, orifice, pump, regulation, weir, valve, bridge, culvert, direct_discharge, gate</p>
 
 <h4>3.2 Data Entry Rules</h4>
 <ul>

@@ -1,3 +1,3 @@
 """Tools for exporting MIKE 1D and EPANET result files to Excel."""
 
-__version__ = "2.2.1"
+__version__ = "2.2.2"

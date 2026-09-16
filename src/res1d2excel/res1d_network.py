@@ -6,6 +6,7 @@
 
 import re
 import warnings
+from collections import Counter
 from pathlib import Path
 from dataclasses import dataclass, field
 
@@ -28,9 +29,10 @@ class ElementRef:
     muid: str
     element_type: str
     collection_name: str
-    collection_index: int
+    collection_index: int | None
     source_kind: str
     data_items_by_quantity: dict[str, DataItemRef] = field(default_factory=dict)
+    member_refs: list = field(default_factory=list)
     chainage: float | None = None
     gridpoint_index: int | None = None
     raw_type_text: str | None = None
@@ -43,6 +45,7 @@ class Res1DNetwork(res1d.Res1D):
         'direct_discharge': ['discharge structure', 'direct discharge',
                              'discharge'],
         'bridge': ['bridge'],
+        'culvert': ['culvert'],
         'gate': ['gate'],
         'pump': ['pump'],
         'orifice': ['orifice'],
@@ -72,6 +75,7 @@ class Res1DNetwork(res1d.Res1D):
     _weir_quantity_IDs = []
     _valve_quantity_IDs = []
     _bridge_quantity_IDs = []
+    _culvert_quantity_IDs = []
     _direct_discharge_quantity_IDs = []
     _gate_quantity_IDs = []
 
@@ -98,6 +102,7 @@ class Res1DNetwork(res1d.Res1D):
         self.valve_IDs = {}
         self.regulation_IDs = {}
         self.bridge_IDs = {}
+        self.culvert_IDs = {}
         self.direct_discharge_IDs = {}
         self.gate_IDs = {}
         self.structure_IDs = {}
@@ -118,6 +123,7 @@ class Res1DNetwork(res1d.Res1D):
         self.valve_count = len(self.valve_IDs)
         self.regulation_count = len(self.regulation_IDs)
         self.bridge_count = len(self.bridge_IDs)
+        self.culvert_count = len(self.culvert_IDs)
         self.direct_discharge_count = len(self.direct_discharge_IDs)
         self.gate_count = len(self.gate_IDs)
 
@@ -127,10 +133,23 @@ class Res1DNetwork(res1d.Res1D):
                 node.Id, 'node', 'Nodes', k, node, 'node')
 
     def _build_reach_and_structure_index(self):
-        for k, reach in enumerate(self.result_data.Reaches):
+        reaches = list(self.result_data.Reaches)
+        reach_ids = [self._reach_id_without_index(reach.Id)
+                     for reach in reaches]
+        reach_id_counts = Counter(reach_ids)
+        duplicate_reach_ids = {
+            reach_id for reach_id, count in reach_id_counts.items()
+            if count > 1
+        }
+        reach_groups = {}
+
+        for k, reach in enumerate(reaches):
             reach_id = self._reach_id_without_index(reach.Id)
+            link_id = (
+                reach.Id if reach_id in duplicate_reach_ids else reach_id
+            )
             reach_ref = self._create_element_ref(
-                reach_id, 'link', 'Reaches', k, reach, 'reach')
+                link_id, 'link', 'Reaches', k, reach, 'reach')
 
             if self._is_epanet_result:
                 self.reach_IDs[reach_id] = reach_ref
@@ -140,8 +159,12 @@ class Res1DNetwork(res1d.Res1D):
             handled_as_structure = self._add_sewer_structure_ref(
                 reach_id, k, reach)
             if not handled_as_structure:
-                self.reach_IDs[reach_id] = reach_ref
-            self._add_river_structure_refs(k, reach)
+                self.reach_IDs[link_id] = reach_ref
+                if link_id != reach_id:
+                    reach_groups.setdefault(reach_id, []).append(reach_ref)
+                self._add_river_structure_refs(k, reach)
+
+        self._add_reach_group_refs(reach_groups)
 
     def _collect_quantity_ids(self):
         self._node_quantity_IDs = self._get_ref_quantities(self.node_IDs)
@@ -153,6 +176,7 @@ class Res1DNetwork(res1d.Res1D):
         self._weir_quantity_IDs = self._get_ref_quantities(self.weir_IDs)
         self._valve_quantity_IDs = self._get_ref_quantities(self.valve_IDs)
         self._bridge_quantity_IDs = self._get_ref_quantities(self.bridge_IDs)
+        self._culvert_quantity_IDs = self._get_ref_quantities(self.culvert_IDs)
         self._direct_discharge_quantity_IDs = self._get_ref_quantities(
             self.direct_discharge_IDs)
         self._gate_quantity_IDs = self._get_ref_quantities(self.gate_IDs)
@@ -173,9 +197,23 @@ class Res1DNetwork(res1d.Res1D):
         return self._get_ref_quantities(element_IDs)
 
     def _reach_id_without_index(self, reach_id):
-        if '-' not in reach_id:
-            return reach_id
-        return '-'.join(reach_id.split('-')[:-1])
+        return re.sub(r'-[1-9][0-9]*$', '', reach_id)
+
+    def _add_reach_group_refs(self, reach_groups):
+        for reach_id, member_refs in reach_groups.items():
+            if reach_id in self.reach_IDs:
+                continue
+            data_items_by_quantity = {}
+            for ref in member_refs:
+                data_items_by_quantity.update(ref.data_items_by_quantity)
+            self.reach_IDs[reach_id] = ElementRef(
+                muid=reach_id,
+                element_type='link',
+                collection_name='Reaches',
+                collection_index=None,
+                source_kind='reach_group',
+                data_items_by_quantity=data_items_by_quantity,
+                member_refs=member_refs)
 
     def _is_epanet_result_file(self, file_path):
         return Path(file_path).suffix.lower() in self.EPANET_EXTENSIONS
@@ -394,6 +432,7 @@ class Res1DNetwork(res1d.Res1D):
             'valve': self.valve_IDs,
             'regulation': self.regulation_IDs,
             'bridge': self.bridge_IDs,
+            'culvert': self.culvert_IDs,
             'direct_discharge': self.direct_discharge_IDs,
             'gate': self.gate_IDs,
         }.get(structure_type)
@@ -443,12 +482,11 @@ class Res1DNetwork(res1d.Res1D):
         for name in extraction_IDs:
             ref = element_IDs[name]
             for quantity_ID in quantity_IDs:
-                data_ref = ref.data_items_by_quantity.get(quantity_ID)
-                if data_ref is None:
+                frames = self._ref_quantity_to_frames(name, ref, quantity_ID)
+                if not frames:
                     missing_quantities.setdefault(name, []).append(quantity_ID)
                     continue
-                d = self._ref_data_item_to_frame(name, ref, data_ref)
-                df_elem[quantity_ID].append(d)
+                df_elem[quantity_ID].extend(frames)
 
         self._warn_missing_quantities(
             element_type, missing_quantities, element_IDs)
@@ -520,6 +558,7 @@ class Res1DNetwork(res1d.Res1D):
             'weir': self.weir_IDs,
             'valve': self.valve_IDs,
             'bridge': self.bridge_IDs,
+            'culvert': self.culvert_IDs,
             'direct_discharge': self.direct_discharge_IDs,
             'gate': self.gate_IDs,
         }
@@ -529,6 +568,62 @@ class Res1DNetwork(res1d.Res1D):
             return "; ".join(items)
         shown = "; ".join(items[:limit])
         return f"{shown}; and {len(items) - limit} more"
+
+    def _ref_quantity_to_frames(self, name, ref, quantity_ID):
+        if ref.source_kind == 'reach_group':
+            frames = []
+            for member_ref in ref.member_refs:
+                data_ref = member_ref.data_items_by_quantity.get(quantity_ID)
+                if data_ref is None:
+                    continue
+                frames.append(
+                    self._reach_group_data_item_to_frame(
+                        name, member_ref, data_ref))
+            if not frames:
+                return []
+            combined = pd.concat(frames, axis=1)
+            combined = combined.loc[:, ~combined.columns.duplicated()]
+            if not isinstance(combined.columns, pd.MultiIndex):
+                combined.columns = pd.MultiIndex.from_tuples(
+                    combined.columns,
+                    names=['muid', 'chainage'])
+            return [combined]
+
+        data_ref = ref.data_items_by_quantity.get(quantity_ID)
+        if data_ref is None:
+            return []
+        return [self._ref_data_item_to_frame(name, ref, data_ref)]
+
+    def _reach_group_data_item_to_frame(self, name, ref, data_ref):
+        element = self._get_ref_element(ref)
+        data = self._get_data_item_array(data_ref.data_item)
+        column_count = self._get_data_column_count(data)
+        chainages = self._get_data_item_index_chainages(
+            element, data_ref.data_item)
+
+        if chainages is None or len(chainages) != column_count:
+            try:
+                chainages = self._get_element_chainages(
+                    element, column_count, ref.muid)
+            except Exception:
+                chainages = None
+
+        return self._data_array_to_frame(
+            name,
+            data,
+            chainages,
+            strict_chainages=False)
+
+    def _get_data_item_index_chainages(self, element, data_item):
+        if data_item.IndexList is None:
+            return None
+        gridpoints = list(element.GridPoints)
+        chainages = []
+        for gridpoint_index in list(data_item.IndexList):
+            if gridpoint_index >= len(gridpoints):
+                return None
+            chainages.append(gridpoints[gridpoint_index].Chainage)
+        return chainages
 
     def _ref_data_item_to_frame(self, name, ref, data_ref):
         chainages = None
@@ -640,6 +735,14 @@ class Res1DNetwork(res1d.Res1D):
         return self._get_ref_data_frames(
             self.bridge_IDs, extraction_IDs, quantity_IDs, 'bridge')
 
+    def get_culvert_data_frames(self, extraction_IDs,
+                 quantity_IDs = _culvert_quantity_IDs):
+        """
+        extract time series from culverts.
+        """
+        return self._get_ref_data_frames(
+            self.culvert_IDs, extraction_IDs, quantity_IDs, 'culvert')
+
     def get_direct_discharge_data_frames(self, extraction_IDs,
                  quantity_IDs = _direct_discharge_quantity_IDs):
         """
@@ -672,6 +775,7 @@ class Res1DNetwork(res1d.Res1D):
                 ('weir', self.get_weir_data_frames),
                 ('valve', self.get_valve_data_frames),
                 ('bridge', self.get_bridge_data_frames),
+                ('culvert', self.get_culvert_data_frames),
                 ('direct_discharge', self.get_direct_discharge_data_frames),
                 ('gate', self.get_gate_data_frames)]:
             dfs[structure_type] = getter(extraction_IDs, quantity_IDs)
@@ -716,9 +820,12 @@ class Res1DNetwork(res1d.Res1D):
                 ('Valve', self.valve_IDs),
                 ('Weir', self.weir_IDs),
                 ('Bridge', self.bridge_IDs),
+                ('Culvert', self.culvert_IDs),
                 ('Direct_discharge', self.direct_discharge_IDs),
                 ('Gate', self.gate_IDs)]:
             for k, ref in elem_dict.items():
+                if ref.source_kind == 'reach_group':
+                    continue
                 reach = self._get_ref_element(ref)
                 gridpoints = list(reach.GridPoints)
                 if ref.gridpoint_index is not None:

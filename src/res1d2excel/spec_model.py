@@ -26,6 +26,7 @@ ELEMENT_TYPES = [
     "weir",
     "valve",
     "bridge",
+    "culvert",
     "direct_discharge",
     "gate",
 ]
@@ -42,6 +43,7 @@ ELEMENT_SCHEMAS = {
     "weir": ["alias", "quantity", "muid"],
     "valve": ["alias", "quantity", "muid"],
     "bridge": ["alias", "quantity", "muid"],
+    "culvert": ["alias", "quantity", "muid"],
     "direct_discharge": ["alias", "quantity", "muid"],
     "gate": ["alias", "quantity", "muid"],
     "res1d_files": ["result_type", "short_name", "res1d_file_path"],
