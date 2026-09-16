@@ -5,6 +5,7 @@
 # this is the res1d network class module
 
 import re
+import warnings
 from pathlib import Path
 from dataclasses import dataclass, field
 
@@ -425,24 +426,109 @@ class Res1DNetwork(res1d.Res1D):
         collection = getattr(self.result_data, ref.collection_name)
         return collection.get_Item(ref.collection_index)
 
-    def _get_ref_data_frames(self, element_IDs, extraction_IDs, quantity_IDs):
-        extraction_IDs = utilities.list_cleanup(extraction_IDs)
-        extraction_IDs = [eId for eId in extraction_IDs if eId in element_IDs]
+    def _get_ref_data_frames(
+            self, element_IDs, extraction_IDs, quantity_IDs,
+            element_type=None):
+        requested_IDs = utilities.list_cleanup(extraction_IDs)
+        missing_IDs = [eId for eId in requested_IDs if eId not in element_IDs]
+        extraction_IDs = [eId for eId in requested_IDs if eId in element_IDs]
+        self._warn_missing_extraction_ids(
+            element_type, missing_IDs, element_IDs)
 
         df_elem = {}
         for quantity_ID in quantity_IDs:
             df_elem[quantity_ID] = []
 
+        missing_quantities = {}
         for name in extraction_IDs:
             ref = element_IDs[name]
             for quantity_ID in quantity_IDs:
                 data_ref = ref.data_items_by_quantity.get(quantity_ID)
                 if data_ref is None:
+                    missing_quantities.setdefault(name, []).append(quantity_ID)
                     continue
                 d = self._ref_data_item_to_frame(name, ref, data_ref)
                 df_elem[quantity_ID].append(d)
 
+        self._warn_missing_quantities(
+            element_type, missing_quantities, element_IDs)
         return self._finalize_quantity_frames(df_elem)
+
+    def _warn_missing_extraction_ids(
+            self, element_type, missing_IDs, element_IDs):
+        if not missing_IDs:
+            return
+
+        extraction_name = self._extraction_warning_name(element_type)
+        missing_text = self._format_missing_id_list(missing_IDs, element_type)
+        warnings.warn(
+            f"{extraction_name}: requested MUID(s) not found and skipped: "
+            f"{missing_text}. Available {element_type or 'element'} count: "
+            f"{len(element_IDs)}.",
+            stacklevel=3)
+
+    def _warn_missing_quantities(
+            self, element_type, missing_quantities, element_IDs):
+        if not missing_quantities:
+            return
+
+        extraction_name = self._extraction_warning_name(element_type)
+        lines = []
+        for muid, quantity_IDs in sorted(missing_quantities.items()):
+            ref = element_IDs[muid]
+            available = sorted(ref.data_items_by_quantity.keys())
+            lines.append(
+                f"{muid}: missing {', '.join(quantity_IDs)}; available "
+                f"{', '.join(available) or 'none'}")
+
+        warnings.warn(
+            f"{extraction_name}: requested quantities not found and skipped. "
+            f"{self._format_warning_items(lines)}",
+            stacklevel=3)
+
+    def _extraction_warning_name(self, element_type):
+        if element_type:
+            return f"Network {element_type} extraction"
+        return "Network extraction"
+
+    def _format_missing_id_list(self, missing_IDs, element_type):
+        items = []
+        for muid in missing_IDs:
+            categories = self._find_element_categories(muid, element_type)
+            if categories:
+                items.append(f"{muid} (found as {', '.join(categories)})")
+            else:
+                items.append(str(muid))
+        return self._format_warning_items(items)
+
+    def _find_element_categories(self, muid, current_element_type=None):
+        categories = []
+        for category, ids in self._element_category_maps().items():
+            if category == current_element_type:
+                continue
+            if muid in ids:
+                categories.append(category)
+        return categories
+
+    def _element_category_maps(self):
+        return {
+            'node': self.node_IDs,
+            'link': self.reach_IDs,
+            'orifice': self.orifice_IDs,
+            'pump': self.pump_IDs,
+            'regulation': self.regulation_IDs,
+            'weir': self.weir_IDs,
+            'valve': self.valve_IDs,
+            'bridge': self.bridge_IDs,
+            'direct_discharge': self.direct_discharge_IDs,
+            'gate': self.gate_IDs,
+        }
+
+    def _format_warning_items(self, items, limit=10):
+        if len(items) <= limit:
+            return "; ".join(items)
+        shown = "; ".join(items[:limit])
+        return f"{shown}; and {len(items) - limit} more"
 
     def _ref_data_item_to_frame(self, name, ref, data_ref):
         chainages = None
@@ -496,7 +582,7 @@ class Res1DNetwork(res1d.Res1D):
         extract time series from nodes.
         """
         return self._get_ref_data_frames(
-            self.node_IDs, extraction_IDs, quantity_IDs)
+            self.node_IDs, extraction_IDs, quantity_IDs, 'node')
 
     def get_reach_data_frames(self, extraction_IDs,
                  quantity_IDs = _reach_quantity_IDs):
@@ -504,7 +590,7 @@ class Res1DNetwork(res1d.Res1D):
         extract time series from reaches.
         """
         return self._get_ref_data_frames(
-            self.reach_IDs, extraction_IDs, quantity_IDs)
+            self.reach_IDs, extraction_IDs, quantity_IDs, 'link')
 
     def get_orifice_data_frames(self, extraction_IDs,
                  quantity_IDs = _orifice_quantity_IDs):
@@ -512,7 +598,7 @@ class Res1DNetwork(res1d.Res1D):
         extract time series from orifices.
         """
         return self._get_ref_data_frames(
-            self.orifice_IDs, extraction_IDs, quantity_IDs)
+            self.orifice_IDs, extraction_IDs, quantity_IDs, 'orifice')
 
     def get_pump_data_frames(self, extraction_IDs,
                  quantity_IDs = _pump_quantity_IDs):
@@ -520,7 +606,7 @@ class Res1DNetwork(res1d.Res1D):
         extract time series from pumps.
         """
         return self._get_ref_data_frames(
-            self.pump_IDs, extraction_IDs, quantity_IDs)
+            self.pump_IDs, extraction_IDs, quantity_IDs, 'pump')
 
     def get_regulation_data_frames(self, extraction_IDs,
                  quantity_IDs = _regulation_quantity_IDs):
@@ -528,7 +614,7 @@ class Res1DNetwork(res1d.Res1D):
         extract time series from regulations.
         """
         return self._get_ref_data_frames(
-            self.regulation_IDs, extraction_IDs, quantity_IDs)
+            self.regulation_IDs, extraction_IDs, quantity_IDs, 'regulation')
 
     def get_weir_data_frames(self, extraction_IDs,
                  quantity_IDs = _weir_quantity_IDs):
@@ -536,7 +622,7 @@ class Res1DNetwork(res1d.Res1D):
         extract time series from weirs.
         """
         return self._get_ref_data_frames(
-            self.weir_IDs, extraction_IDs, quantity_IDs)
+            self.weir_IDs, extraction_IDs, quantity_IDs, 'weir')
 
     def get_valve_data_frames(self, extraction_IDs,
                  quantity_IDs = _valve_quantity_IDs):
@@ -544,7 +630,7 @@ class Res1DNetwork(res1d.Res1D):
         extract time series from valves.
         """
         return self._get_ref_data_frames(
-            self.valve_IDs, extraction_IDs, quantity_IDs)
+            self.valve_IDs, extraction_IDs, quantity_IDs, 'valve')
 
     def get_bridge_data_frames(self, extraction_IDs,
                  quantity_IDs = _bridge_quantity_IDs):
@@ -552,7 +638,7 @@ class Res1DNetwork(res1d.Res1D):
         extract time series from bridges.
         """
         return self._get_ref_data_frames(
-            self.bridge_IDs, extraction_IDs, quantity_IDs)
+            self.bridge_IDs, extraction_IDs, quantity_IDs, 'bridge')
 
     def get_direct_discharge_data_frames(self, extraction_IDs,
                  quantity_IDs = _direct_discharge_quantity_IDs):
@@ -560,7 +646,8 @@ class Res1DNetwork(res1d.Res1D):
         extract time series from direct discharge structures.
         """
         return self._get_ref_data_frames(
-            self.direct_discharge_IDs, extraction_IDs, quantity_IDs)
+            self.direct_discharge_IDs, extraction_IDs, quantity_IDs,
+            'direct_discharge')
 
     def get_gate_data_frames(self, extraction_IDs,
                  quantity_IDs = _gate_quantity_IDs):
@@ -568,7 +655,7 @@ class Res1DNetwork(res1d.Res1D):
         extract time series from gates.
         """
         return self._get_ref_data_frames(
-            self.gate_IDs, extraction_IDs, quantity_IDs)
+            self.gate_IDs, extraction_IDs, quantity_IDs, 'gate')
 
     def get_structure_data_frames(
             self, extraction_IDs, quantity_IDs = DEFAULT_STRUCTURE_QUANTITIES):
