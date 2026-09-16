@@ -468,17 +468,15 @@ class ElementCollection:
                 available_chainages=chainages,
             )
         closest = selected[1]
-        if not self._chainages_equal(element_chainage, closest):
-            details = ""
-            if diagnostics.is_debug():
-                details = (
-                    " Available chainages: "
-                    f"{diagnostics.format_values(chainages)}."
-                )
+        if (
+            diagnostics.is_debug()
+            and not self._chainages_equal(element_chainage, closest)
+        ):
             warnings.warn(
                 f"{self._format_element_for_warning(element)} requested "
                 f"chainage {element_chainage}; using nearest available "
-                f"chainage {closest}.{details}",
+                f"chainage {closest}. Available chainages: "
+                f"{diagnostics.format_values(chainages)}.",
                 stacklevel=3,
             )
         return ColumnMatch(
