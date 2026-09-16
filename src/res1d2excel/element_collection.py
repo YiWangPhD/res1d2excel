@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Union
 import pandas as pd
 import os
@@ -14,12 +15,23 @@ import math
 
 from .base_element import BaseElement
 from . import combined_element
+from . import diagnostics
 from . import simple_element
 
 
 ElementDataFrames = Dict[str, pd.DataFrame]
 CombinedItem = Dict[str, Any]
 AliasLookup = Dict[str, Dict[str, BaseElement]]
+
+
+@dataclass
+class ColumnMatch:
+    column: Optional[Union[str, tuple[str, float]]] = None
+    reason: Optional[str] = None
+    available_columns: Optional[list[Any]] = None
+    available_element_ids: Optional[list[Any]] = None
+    available_chainages: Optional[list[Any]] = None
+    selected_chainage: Any = None
 
 
 class ElementCollection:
@@ -214,12 +226,10 @@ class ElementCollection:
 
             if df is None:
                 for element in elements.values():
-                    warnings.warn(
-                        "No timeseries assigned to "
-                        f"{self._format_element_for_warning(element)} "
-                        f"from result file '{filename}': quantity "
-                        f"'{quantity_id}' was not returned.",
-                        stacklevel=2,
+                    self._warn_no_timeseries(
+                        element,
+                        filename,
+                        f"quantity '{quantity_id}' was not returned",
                     )
                 continue
 
@@ -227,17 +237,17 @@ class ElementCollection:
                 raise TypeError(f"{quantity_id} must map to a DataFrame")
 
             for element in elements.values():
-                col = self._find_column_in_dataframe(element, df)
+                match = self._find_column_in_dataframe(element, df)
 
-                if col is not None:
-                    element.add_ts(filename, df[col])
+                if match.column is not None:
+                    element.add_ts(filename, df[match.column])
 
                 if element.get_ts(filename) is None:
-                    warnings.warn(
-                        "No timeseries assigned to "
-                        f"{self._format_element_for_warning(element)} "
-                        f"from result file '{filename}'.",
-                        stacklevel=2,
+                    self._warn_no_timeseries(
+                        element,
+                        filename,
+                        match.reason or "no matching dataframe column found",
+                        match,
                     )
 
     # -------------------------
@@ -281,37 +291,87 @@ class ElementCollection:
         self,
         element: BaseElement,
         df: pd.DataFrame
-    ) -> Optional[Union[str, tuple[str, float]]]:
+    ) -> ColumnMatch:
 
         cols = df.columns
 
         element_id = element.get_element_id()
         element_chainage = element.get_chainage()
 
+        if len(cols) == 0:
+            return ColumnMatch(
+                reason="extracted dataframe has no columns",
+                available_columns=[],
+            )
+
         # Simple columns
         if not isinstance(cols, pd.MultiIndex):
-            return element_id if element_id in cols else None
+            if element_id in cols:
+                return ColumnMatch(column=element_id)
+            return ColumnMatch(
+                reason=f"element id '{element_id}' was not found in dataframe columns",
+                available_columns=list(cols),
+            )
 
         # MultiIndex case
         level0 = cols.get_level_values(0)
         if element_id not in level0:
-            return None
+            return ColumnMatch(
+                reason=(
+                    f"element id '{element_id}' was not found in dataframe "
+                    "column level 'muid'"
+                ),
+                available_element_ids=self._unique_values(level0),
+            )
 
         sub_df = df[element_id]
         chainages = sub_df.columns
+        if len(chainages) == 0:
+            return ColumnMatch(
+                reason=(
+                    f"element id '{element_id}' was found, but no chainage "
+                    "columns were available"
+                ),
+                available_element_ids=self._unique_values(level0),
+                available_chainages=[],
+            )
 
         if element_chainage == self.CHAINAGE_LAST:
-            return (element_id, chainages[-1])
+            return ColumnMatch(
+                column=(element_id, chainages[-1]),
+                available_chainages=list(chainages),
+                selected_chainage=chainages[-1],
+            )
 
-        closest = min(chainages, key=lambda c: abs(c - element_chainage))
+        try:
+            closest = min(chainages, key=lambda c: abs(c - element_chainage))
+        except (TypeError, ValueError) as exc:
+            return ColumnMatch(
+                reason=(
+                    f"could not match requested chainage {element_chainage} "
+                    "against available chainages"
+                ),
+                available_element_ids=self._unique_values(level0),
+                available_chainages=list(chainages),
+            )
         if not self._chainages_equal(element_chainage, closest):
+            details = ""
+            if diagnostics.is_debug():
+                details = (
+                    " Available chainages: "
+                    f"{diagnostics.format_values(chainages)}."
+                )
             warnings.warn(
                 f"{self._format_element_for_warning(element)} requested "
                 f"chainage {element_chainage}; using nearest available "
-                f"chainage {closest}.",
+                f"chainage {closest}.{details}",
                 stacklevel=3,
             )
-        return (element_id, closest)
+        return ColumnMatch(
+            column=(element_id, closest),
+            available_chainages=list(chainages),
+            selected_chainage=closest,
+        )
 
     @staticmethod
     def _row_to_simple_element(
@@ -403,3 +463,44 @@ class ElementCollection:
             return bool(pd.isna(value))
         except (TypeError, ValueError):
             return False
+
+    @staticmethod
+    def _unique_values(values: Iterable[Any]) -> list[Any]:
+        items = list(dict.fromkeys(values))
+        return sorted(items, key=lambda item: str(item))
+
+    @staticmethod
+    def _warn_no_timeseries(
+        element: BaseElement,
+        filename: str,
+        reason: str,
+        match: ColumnMatch | None = None,
+    ) -> None:
+        message = (
+            "No timeseries assigned to "
+            f"{ElementCollection._format_element_for_warning(element)} "
+            f"from result file '{filename}': {reason}."
+        )
+        if diagnostics.is_debug() and match is not None:
+            debug_parts = []
+            if match.available_columns is not None:
+                debug_parts.append(
+                    "Available columns: "
+                    f"{diagnostics.format_values(match.available_columns)}"
+                )
+            if match.available_element_ids is not None:
+                debug_parts.append(
+                    "Available MUIDs: "
+                    f"{diagnostics.format_values(match.available_element_ids)}"
+                )
+            if match.available_chainages is not None:
+                debug_parts.append(
+                    "Available chainages: "
+                    f"{diagnostics.format_values(match.available_chainages)}"
+                )
+            if debug_parts:
+                message += " " + " ".join(debug_parts)
+        elif not diagnostics.is_debug():
+            message += " Run with --debug for dataframe column details."
+
+        warnings.warn(message, stacklevel=2)

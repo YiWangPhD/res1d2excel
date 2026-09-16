@@ -8,6 +8,7 @@ import sys
 from . import input_dataframes
 from . import input_xlsx
 from . import input_json
+from . import diagnostics
 from . import res1d_extractors
 from . import exporter
 from . import exporter_xlsx
@@ -108,6 +109,10 @@ def export_results(
 def main(argv: List[str] | None = None) -> None:
     if argv is None:
         argv = sys.argv[1:]
+
+    if "--debug" in argv:
+        diagnostics.set_debug(True)
+        argv = [arg for arg in argv if arg != "--debug"]
 
     if len(argv) == 0:
         #create templates

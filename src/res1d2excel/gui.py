@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+import argparse
 from pathlib import Path
 
 from PySide6.QtCore import QProcess, Qt
@@ -41,10 +42,11 @@ REQUIRED_IMPORTS = [
 
 
 class MainWindow(QMainWindow):
-    def __init__(self) -> None:
+    def __init__(self, debug: bool = False) -> None:
         super().__init__()
         self.setWindowTitle("res1d2excel")
         self.resize(900, 620)
+        self.debug = debug
         self.process: QProcess | None = None
         self.current_spec: dict | None = None
         self.spec_source_path: str | None = None
@@ -52,7 +54,10 @@ class MainWindow(QMainWindow):
 
         self.python_edit = QLineEdit(sys.executable)
         self.input_edit = QLineEdit()
-        self.status_label = QLabel("Environment not validated")
+        status_text = "Environment not validated"
+        if self.debug:
+            status_text += " (debug diagnostics enabled)"
+        self.status_label = QLabel(status_text)
         self.status_label.setObjectName("statusLabel")
 
         self.log = QPlainTextEdit()
@@ -308,7 +313,10 @@ class MainWindow(QMainWindow):
         self.process.readyReadStandardOutput.connect(self._read_process_output)
         self.process.finished.connect(self._process_finished)
 
-        args = ["-m", "res1d2excel", *package_args]
+        args = ["-m", "res1d2excel"]
+        if self.debug:
+            args.append("--debug")
+        args.extend(package_args)
         self.append_log("")
         self.append_log(f"> {python} {' '.join(args)}")
 
@@ -372,9 +380,20 @@ class MainWindow(QMainWindow):
 
 
 def main() -> None:
-    app = QApplication(sys.argv)
+    parser = argparse.ArgumentParser(
+        prog="res1d2excel-gui",
+        description="Launch the res1d2excel desktop GUI.",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Pass detailed extraction diagnostics to backend runs.",
+    )
+    args = parser.parse_args()
+
+    app = QApplication([sys.argv[0]])
     app.setApplicationName("res1d2excel")
-    window = MainWindow()
+    window = MainWindow(debug=args.debug)
     window.show()
     sys.exit(app.exec())
 

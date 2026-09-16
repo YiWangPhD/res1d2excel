@@ -6,6 +6,7 @@ import argparse
 from pathlib import Path
 
 from . import __version__
+from . import diagnostics
 from . import res1d2excel
 
 
@@ -27,7 +28,13 @@ def main() -> None:
         action="version",
         version=f"%(prog)s {__version__}",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Show detailed extraction diagnostics in warnings.",
+    )
 
     args = parser.parse_args()
+    diagnostics.set_debug(args.debug)
     argv = [str(Path(args.input_file))] if args.input_file else []
     res1d2excel.main(argv)
