@@ -72,6 +72,10 @@ added JSON/XLSX loading, automatic in-memory pass-back to the main window, manua
 added validation updates for optional element aliases and required combined-item aliases
 added README GUI workflow documentation and screenshots
 
+v2.2.0 - 2026-9-15
+added folder picking for result files in the native specification editor
+added remembered result-file folder browsing, resizable result-file columns, and delete-all rows for element tabs
+
 to do list:
     extract multiple time periods from the same res1d file
     export to pdf

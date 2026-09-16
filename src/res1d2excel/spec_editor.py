@@ -45,6 +45,8 @@ GREEN_BUTTON_STYLE = (
     "QPushButton[softGreen='true']:pressed { background: #8fcb98; }"
 )
 
+RESULT_FILE_EXTENSIONS = {".res1d", ".res", ".resx", ".whr"}
+
 
 def mark_green_button(button: QPushButton) -> QPushButton:
     button.setProperty("softGreen", True)
@@ -91,6 +93,7 @@ class TableTab(QWidget):
         self.selected_row = -1
         self.inputs: dict[str, QLineEdit] = {}
         self._updating = False
+        self._last_result_folder = self._initial_result_folder()
 
         layout = QVBoxLayout(self)
         self.form = QFormLayout()
@@ -108,14 +111,22 @@ class TableTab(QWidget):
         copy_button.clicked.connect(self.copy_row)
         delete_button = mark_green_button(QPushButton("Delete Row"))
         delete_button.clicked.connect(self.delete_row)
+        delete_all_button = mark_green_button(QPushButton("Delete All Rows"))
+        delete_all_button.clicked.connect(self.delete_all_rows)
+        delete_all_button.setVisible(name in spec_model.ELEMENT_TYPES)
         pick_button = mark_green_button(QPushButton("Pick File"))
         pick_button.clicked.connect(self.pick_file)
         pick_button.setVisible(name == "res1d_files")
+        pick_folder_button = mark_green_button(QPushButton("Pick Folder"))
+        pick_folder_button.clicked.connect(self.pick_folder)
+        pick_folder_button.setVisible(name == "res1d_files")
 
         buttons.addWidget(add_button)
         buttons.addWidget(copy_button)
         buttons.addWidget(delete_button)
+        buttons.addWidget(delete_all_button)
         buttons.addWidget(pick_button)
+        buttons.addWidget(pick_folder_button)
         buttons.addStretch(1)
         layout.addLayout(buttons)
 
@@ -125,7 +136,12 @@ class TableTab(QWidget):
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        resize_mode = (
+            QHeaderView.ResizeMode.Interactive
+            if name == "res1d_files"
+            else QHeaderView.ResizeMode.Stretch
+        )
+        self.table.horizontalHeader().setSectionResizeMode(resize_mode)
         self.table.itemSelectionChanged.connect(self._selection_changed)
         self.table.cellClicked.connect(self._cell_clicked)
         layout.addWidget(self.table)
@@ -164,6 +180,15 @@ class TableTab(QWidget):
         self._fill_form({})
         self.changed.emit()
 
+    def delete_all_rows(self) -> None:
+        if self.name not in spec_model.ELEMENT_TYPES or not self.rows:
+            return
+        self.rows.clear()
+        self.selected_row = -1
+        self.refresh_table()
+        self._fill_form({})
+        self.changed.emit()
+
     def pick_file(self) -> None:
         if self.name != "res1d_files":
             return
@@ -172,13 +197,49 @@ class TableTab(QWidget):
         path, _ = QFileDialog.getOpenFileName(
             self,
             "Select result file",
-            str(Path.cwd()),
+            str(self._last_result_folder),
             "Result files (*.res1d *.res *.resx *.whr);;All files (*.*)",
         )
         if path:
+            result_path = Path(path)
+            self._last_result_folder = result_path.parent
             self.rows[self.selected_row]["res1d_file_path"] = path
             if not self.rows[self.selected_row].get("short_name"):
-                self.rows[self.selected_row]["short_name"] = Path(path).stem
+                self.rows[self.selected_row]["short_name"] = result_path.stem
+            self.refresh_table()
+            self._fill_form(self.rows[self.selected_row])
+            self.changed.emit()
+
+    def pick_folder(self) -> None:
+        if self.name != "res1d_files":
+            return
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            "Select result file folder",
+            str(self._last_result_folder),
+        )
+        if not folder:
+            return
+        folder_path = Path(folder)
+        self._last_result_folder = folder_path
+        result_files = sorted(
+            (
+                path
+                for path in folder_path.iterdir()
+                if path.is_file() and path.suffix.lower() in RESULT_FILE_EXTENSIONS
+            ),
+            key=lambda path: path.name.lower(),
+        )
+        for path in result_files:
+            self.rows.append(
+                {
+                    "result_type": self._result_type_for_path(path),
+                    "short_name": path.stem,
+                    "res1d_file_path": str(path),
+                }
+            )
+        if result_files:
+            self.selected_row = len(self.rows) - 1
             self.refresh_table()
             self._fill_form(self.rows[self.selected_row])
             self.changed.emit()
@@ -226,6 +287,21 @@ class TableTab(QWidget):
             self.rows[self.selected_row][column] = edit.text()
         self.refresh_table()
         self.changed.emit()
+
+    def _initial_result_folder(self) -> Path:
+        if self.name != "res1d_files":
+            return Path.cwd()
+        for row in self.rows:
+            path = Path(str(row.get("res1d_file_path") or ""))
+            if path.parent.exists():
+                return path.parent
+        return Path.cwd()
+
+    def _result_type_for_path(self, path: Path) -> str:
+        filename = path.name.lower()
+        if "runoff" in filename or "rr" in filename:
+            return "runoff"
+        return "network"
 
 
 class OutputTab(QWidget):
