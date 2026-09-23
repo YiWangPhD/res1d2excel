@@ -81,19 +81,14 @@ def integral_block(s, window = default_window):
         time series of integrals
 
     """
-    if type(s.index) == pd.core.indexes.datetimes.DatetimeIndex:
-        original_index = s.index
-        s_index = s.reset_index(level=0)
-        s_index = s_index - s_index.shift(1)
-        s_index = s_index.iloc[:, 0].apply(lambda x: x.total_seconds())
-        s = (s + s.shift(1))/2
-        s = s.reset_index(drop=True)
-        s = s.multiply(s_index, fill_value=0)
-        s.index = original_index
-        s = s.resample(window, closed = 'right').sum()
-        return s.iloc[1:]
-    else:
+    if not isinstance(s.index, pd.DatetimeIndex):
         return np.nan
+
+    dt = s.index.to_series().diff().dt.total_seconds()
+    area = ((s + s.shift(1)) / 2) * dt
+    area = area.dropna()
+
+    return area.resample(window, closed="right").sum()
 
 def integral(s):
     if s.size == 0:
